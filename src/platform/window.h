@@ -3,7 +3,7 @@
 
 #include "../common.h"
 
-// Opaque handle: `handle` is a GLFWwindow*, kept as void* so this header pulls
+// `handle` is a GLFWwindow*, kept as void* so this header pulls
 // in no GLFW types. Held by value like arena_t.
 typedef struct {
     void *handle;

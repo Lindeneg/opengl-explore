@@ -14,8 +14,6 @@
 #include <unistd.h>
 #endif
 
-// --- OS primitives --------------------------------------------------------
-
 #if PLATFORM_WINDOWS
 typedef SRWLOCK os_mutex_t;
 #define OS_MUTEX_INIT SRWLOCK_INIT
@@ -62,8 +60,6 @@ static b32 os_enable_color(void) {
     return isatty(STDOUT_FILENO); // terminals handle ANSI natively
 #endif
 }
-
-// --- logger ---------------------------------------------------------------
 
 static os_mutex_t g_lock = OS_MUTEX_INIT;
 static FILE *g_file = NULL;

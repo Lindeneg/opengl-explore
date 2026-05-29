@@ -1,8 +1,9 @@
-#define GLFW_INCLUDE_NONE // we provide GL ourselves via glcorearb.h
+#define GLFW_INCLUDE_NONE
+#include "window.h"
+
 #include <GLFW/glfw3.h>
 
 #include "../core/log.h"
-#include "window.h"
 
 window_t window_create(i32 width, i32 height, const char *title) {
     ASSERT_MSG(glfwInit(), "glfwInit failed");

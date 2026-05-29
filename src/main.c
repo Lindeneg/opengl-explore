@@ -6,7 +6,7 @@
 
 int main(void) {
     log_init(NULL); // console-only for now
-    log_set_level(LOG_TRACE);
+    log_set_level(LOG_DEBUG);
     LOG_INFO("app starting");
 
     arena_sys_init(MiB(256));

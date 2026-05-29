@@ -12,15 +12,13 @@ typedef enum {
     LOG_FATAL,
 } log_level_t;
 
-// Initialize the logger. `file_path` may be NULL for console-only output.
-// Call once at startup, before worker threads start logging.
+// `file_path` may be NULL for console-only output.
 void log_init(const char *file_path);
 void log_shutdown(void);
 
 // Drop messages below `min`.
 void log_set_level(log_level_t min);
 
-// Prefer the LOG_* macros below over calling this directly.
 void log_write(log_level_t level, const char *file, i32 line, const char *fmt, ...);
 
 #define LOG_TRACE(...) log_write(LOG_TRACE, __FILE__, __LINE__, __VA_ARGS__)

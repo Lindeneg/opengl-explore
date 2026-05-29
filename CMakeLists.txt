@@ -21,7 +21,7 @@ add_executable(App
         src/render/renderer.c
 )
 
-target_include_directories(App PRIVATE third_party)
+target_include_directories(App SYSTEM PRIVATE third_party)
 
 find_package(Threads REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)

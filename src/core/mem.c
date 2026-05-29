@@ -13,8 +13,6 @@
 #include <unistd.h>
 #endif
 
-// --- OS memory primitives -------------------------------------------------
-
 static u64 os_page_size(void) {
 #if PLATFORM_WINDOWS
     SYSTEM_INFO si;
@@ -25,8 +23,6 @@ static u64 os_page_size(void) {
 #endif
 }
 
-// Windows reservations must start on a 64 KiB boundary; Linux mmap is
-// page-granular, so the page size is enough there.
 static u64 os_alloc_granularity(void) {
 #if PLATFORM_WINDOWS
     SYSTEM_INFO si;
