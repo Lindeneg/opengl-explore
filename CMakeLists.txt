@@ -14,6 +14,7 @@ add_executable(App
         src/core/mem.c
         src/core/log.c
         src/core/file.c
+        src/core/path.c
 
         src/math/math.c
 

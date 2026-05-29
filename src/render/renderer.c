@@ -1,13 +1,10 @@
 #include "renderer.h"
 
+#include "../core/path.h"
 #include "../math/math.h"
 #include "gl.h"
 #include "shader.h"
 #include "texture.h"
-
-#define ATLAS_PATH                                                                                 \
-    "assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/"      \
-    "citybits_texture.png"
 
 // clang-format off
 static const f32 CUBE_VERTS[] = {
@@ -49,12 +46,15 @@ static const u32 CUBE_INDICES[] = {
 // clang-format on
 
 void renderer_init(renderer_t *r, arena_t *scratch) {
-    r->program = shader_from_files(scratch, "assets/shaders/cube.vert", "assets/shaders/cube.frag");
+    r->program = shader_from_files(scratch, FPATH(scratch, "assets", "shaders", "cube.vert"),
+                                   FPATH(scratch, "assets", "shaders", "cube.frag"));
     ASSERT_MSG(r->program, "failed to build cube shader program");
     r->u_mvp = glGetUniformLocation(r->program, "uMVP");
     r->u_tex = glGetUniformLocation(r->program, "uTex");
 
-    r->texture = texture_load(scratch, ATLAS_PATH);
+    r->texture = texture_load(scratch, FPATH(scratch, "assets", "KayKit_City_Builder_Bits_1.0_FREE",
+                                             "KayKit_City_Builder_Bits_1.0_FREE", "Assets", "gltf",
+                                             "citybits_texture.png"));
     ASSERT_MSG(r->texture, "failed to load cube texture");
 
     glGenVertexArrays(1, &r->vao);
