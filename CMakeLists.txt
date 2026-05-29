@@ -19,12 +19,14 @@ add_executable(App
         src/math/math.c
 
         src/platform/window.c
+        src/platform/input.c
 
         src/render/gl.c
         src/render/shader.c
         src/render/renderer.c
         src/render/texture.c
         src/render/mesh.c
+        src/render/camera.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)

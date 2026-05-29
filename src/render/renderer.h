@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "../core/mem.h"
+#include "../math/math.h"
 #include "mesh.h"
 
 typedef struct {
@@ -14,7 +15,7 @@ typedef struct {
 } renderer_t;
 
 void renderer_init(renderer_t *r, arena_t *scratch);
-void renderer_draw(renderer_t *r, i32 fb_w, i32 fb_h, f64 t);
+void renderer_draw(renderer_t *r, i32 fb_w, i32 fb_h, const mat4_t *view_proj);
 void renderer_shutdown(renderer_t *r);
 
 #endif // TRADING_STUFF_RENDERER_H_
