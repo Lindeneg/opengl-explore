@@ -5,12 +5,12 @@
 #include "render/renderer.h"
 
 int main(void) {
-    log_init(NULL); // console-only for now
+    log_init(NULL);
     log_set_level(LOG_DEBUG);
     LOG_INFO("app starting");
 
     arena_sys_init(MiB(256));
-    arena_t frame = arena_create(MiB(16)); // per-frame scratch (and shader logs at init)
+    arena_t frame = arena_create(MiB(16));
 
     window_t win = window_create(1280, 720, "tradingstuff");
     ASSERT_MSG(gl_load(window_get_proc), "failed to load OpenGL functions");
@@ -23,7 +23,11 @@ int main(void) {
     while (!window_should_close(&win)) {
         window_poll();
         arena_reset(&frame);
-        renderer_draw(&r);
+
+        i32 fb_w, fb_h;
+        window_framebuffer_size(&win, &fb_w, &fb_h);
+        renderer_draw(&r, fb_w, fb_h, window_time());
+
         window_swap(&win);
     }
 

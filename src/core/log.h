@@ -16,7 +16,6 @@ typedef enum {
 void log_init(const char *file_path);
 void log_shutdown(void);
 
-// Drop messages below `min`.
 void log_set_level(log_level_t min);
 
 void log_write(log_level_t level, const char *file, i32 line, const char *fmt, ...);

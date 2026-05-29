@@ -44,7 +44,6 @@ static void os_localtime(struct tm *out, const time_t *t) {
 #endif
 }
 
-// Returns 1 if stdout is an interactive terminal that understands ANSI color.
 static b32 os_enable_color(void) {
 #if PLATFORM_WINDOWS
     DWORD mode = 0;
@@ -122,10 +121,10 @@ void log_shutdown(void) {
 void log_set_level(log_level_t min) { g_min = min; }
 
 void log_write(log_level_t level, const char *file, i32 line, const char *fmt, ...) {
-    if (level < g_min) // benign lock-free read; level is set once at startup
+    if (level < g_min)
         return;
 
-    // Strip the path, keep just the file name.
+    // extract file name
     const char *name = file;
     for (const char *p = file; *p; ++p) {
         if (*p == '/' || *p == '\\')
@@ -138,7 +137,6 @@ void log_write(log_level_t level, const char *file, i32 line, const char *fmt, .
     os_localtime(&lt, &now);
     strftime(ts, sizeof(ts), "%H:%M:%S", &lt);
 
-    // Format on the stack: lock-free, each thread has its own buffer.
     char msg[1024];
     va_list args;
     va_start(args, fmt);
@@ -150,14 +148,13 @@ void log_write(log_level_t level, const char *file, i32 line, const char *fmt, .
     const char *reset = g_color ? "\x1b[0m" : "";
     FILE *console = (level >= LOG_ERROR) ? stderr : stdout;
 
-    // One locked region, one write per sink, so lines never interleave.
     os_lock(&g_lock);
 
     fprintf(console, "%s %s%-5s%s %s:%d: %s\n", ts, color, lvl, reset, name, line, msg);
 
     if (g_file) {
         fprintf(g_file, "%s %-5s %s:%d: %s\n", ts, lvl, name, line, msg);
-        fflush(g_file); // durable across a crash; cheap for a dev logger
+        fflush(g_file);
     }
 
 #if PLATFORM_WINDOWS

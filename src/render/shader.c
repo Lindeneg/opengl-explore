@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include "../core/file.h"
 #include "../core/log.h"
 #include "gl.h"
 
@@ -62,5 +63,18 @@ u32 shader_from_src(arena_t *scratch, const char *vs_src, const char *fs_src) {
         glDeleteShader(vs);
     if (fs)
         glDeleteShader(fs);
+    return program;
+}
+
+u32 shader_from_files(arena_t *scratch, const char *vs_path, const char *fs_path) {
+    temp_t t = temp_begin(scratch);
+    file_data_t vs = file_read(scratch, vs_path);
+    file_data_t fs = file_read(scratch, fs_path);
+
+    u32 program = 0;
+    if (vs.data && fs.data)
+        program = shader_from_src(scratch, (const char *)vs.data, (const char *)fs.data);
+
+    temp_end(t);
     return program;
 }

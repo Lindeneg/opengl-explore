@@ -7,12 +7,14 @@
 typedef struct {
     u32 vao;
     u32 vbo;
+    u32 ebo;
     u32 program;
+    i32 u_mvp;
+    u32 index_count;
 } renderer_t;
 
-// Build the triangle's GL objects. `scratch` is used transiently for shader logs.
 void renderer_init(renderer_t *r, arena_t *scratch);
-void renderer_draw(renderer_t *r);
+void renderer_draw(renderer_t *r, i32 fb_w, i32 fb_h, f64 t);
 void renderer_shutdown(renderer_t *r);
 
 #endif // TRADING_STUFF_RENDERER_H_

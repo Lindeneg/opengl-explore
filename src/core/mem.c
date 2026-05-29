@@ -33,7 +33,6 @@ static u64 os_alloc_granularity(void) {
 #endif
 }
 
-// Reserve address space without committing physical pages. NULL on failure.
 static void *os_reserve(u64 size) {
 #if PLATFORM_WINDOWS
     return VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
@@ -43,7 +42,6 @@ static void *os_reserve(u64 size) {
 #endif
 }
 
-// Back a sub-range of a prior reservation with usable pages. 0 on failure.
 static b32 os_commit(void *ptr, u64 size) {
 #if PLATFORM_WINDOWS
     return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != NULL;

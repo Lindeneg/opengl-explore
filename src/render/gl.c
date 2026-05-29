@@ -8,11 +8,11 @@ GL_FUNCTIONS(X)
 
 b32 gl_load(void_fn (*get)(const char *name)) {
     b32 ok = true;
-#define X(type, name)                                                          \
-    name = (type)get(#name);                                                   \
-    if (!name) {                                                               \
-        LOG_ERROR("GL: failed to load %s", #name);                             \
-        ok = false;                                                            \
+#define X(type, name)                                                                              \
+    name = (type)get(#name);                                                                       \
+    if (!name) {                                                                                   \
+        LOG_ERROR("GL: failed to load %s", #name);                                                 \
+        ok = false;                                                                                \
     }
     GL_FUNCTIONS(X)
 #undef X

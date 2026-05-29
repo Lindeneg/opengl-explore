@@ -37,4 +37,10 @@ void window_poll(void) { glfwPollEvents(); }
 
 void window_swap(window_t *w) { glfwSwapBuffers((GLFWwindow *)w->handle); }
 
+f64 window_time(void) { return glfwGetTime(); }
+
+void window_framebuffer_size(window_t *w, i32 *out_w, i32 *out_h) {
+    glfwGetFramebufferSize((GLFWwindow *)w->handle, out_w, out_h);
+}
+
 void_fn window_get_proc(const char *name) { return (void_fn)glfwGetProcAddress(name); }
