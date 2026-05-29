@@ -1,0 +1,33 @@
+#ifndef TRADING_STUFF_LOG_H_
+#define TRADING_STUFF_LOG_H_
+
+#include "../common.h"
+
+typedef enum {
+    LOG_TRACE,
+    LOG_DEBUG,
+    LOG_INFO,
+    LOG_WARN,
+    LOG_ERROR,
+    LOG_FATAL,
+} log_level_t;
+
+// Initialize the logger. `file_path` may be NULL for console-only output.
+// Call once at startup, before worker threads start logging.
+void log_init(const char *file_path);
+void log_shutdown(void);
+
+// Drop messages below `min`.
+void log_set_level(log_level_t min);
+
+// Prefer the LOG_* macros below over calling this directly.
+void log_write(log_level_t level, const char *file, i32 line, const char *fmt, ...);
+
+#define LOG_TRACE(...) log_write(LOG_TRACE, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_DEBUG(...) log_write(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INFO(...) log_write(LOG_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WARN(...) log_write(LOG_WARN, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ERROR(...) log_write(LOG_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_FATAL(...) log_write(LOG_FATAL, __FILE__, __LINE__, __VA_ARGS__)
+
+#endif // TRADING_STUFF_LOG_H_
