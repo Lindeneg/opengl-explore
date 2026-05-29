@@ -24,6 +24,7 @@ add_executable(App
         src/render/shader.c
         src/render/renderer.c
         src/render/texture.c
+        src/render/mesh.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)
@@ -33,6 +34,8 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Stb REQUIRED)
 target_include_directories(App SYSTEM PRIVATE ${Stb_INCLUDE_DIR})
+find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
+target_include_directories(App SYSTEM PRIVATE ${CGLTF_INCLUDE_DIRS})
 target_link_libraries(App PRIVATE Threads::Threads glfw OpenGL::GL)
 
 #add_custom_command(TARGET App POST_BUILD

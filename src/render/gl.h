@@ -38,14 +38,14 @@
     X(PFNGLDEBUGMESSAGECONTROLPROC, glDebugMessageControl)                                         \
     X(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation)                                           \
     X(PFNGLUNIFORMMATRIX4FVPROC, glUniformMatrix4fv)                                               \
-    X(PFNGLDRAWELEMENTSPROC, glDrawElements)                       \
-    X(PFNGLGENTEXTURESPROC, glGenTextures)                         \
-    X(PFNGLBINDTEXTUREPROC, glBindTexture)                         \
-    X(PFNGLTEXIMAGE2DPROC, glTexImage2D)                           \
-    X(PFNGLTEXPARAMETERIPROC, glTexParameteri)                     \
-    X(PFNGLGENERATEMIPMAPPROC, glGenerateMipmap)                   \
-    X(PFNGLACTIVETEXTUREPROC, glActiveTexture)                     \
-    X(PFNGLDELETETEXTURESPROC, glDeleteTextures)                   \
+    X(PFNGLDRAWELEMENTSPROC, glDrawElements)                                                       \
+    X(PFNGLGENTEXTURESPROC, glGenTextures)                                                         \
+    X(PFNGLBINDTEXTUREPROC, glBindTexture)                                                         \
+    X(PFNGLTEXIMAGE2DPROC, glTexImage2D)                                                           \
+    X(PFNGLTEXPARAMETERIPROC, glTexParameteri)                                                     \
+    X(PFNGLGENERATEMIPMAPPROC, glGenerateMipmap)                                                   \
+    X(PFNGLACTIVETEXTUREPROC, glActiveTexture)                                                     \
+    X(PFNGLDELETETEXTURESPROC, glDeleteTextures)                                                   \
     X(PFNGLUNIFORM1IPROC, glUniform1i)
 
 #define X(type, name) extern type name;

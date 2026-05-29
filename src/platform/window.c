@@ -3,8 +3,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include "../core/log.h"
-
 window_t window_create(i32 width, i32 height, const char *title) {
     ASSERT_MSG(glfwInit(), "glfwInit failed");
 

@@ -1,7 +1,6 @@
 #ifndef TRADING_STUFF_PATH_H_
 #define TRADING_STUFF_PATH_H_
 
-#include "../common.h"
 #include "mem.h"
 
 // Join a NULL-terminated list of segments with the platform separator into `a`.
