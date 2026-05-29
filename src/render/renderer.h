@@ -9,7 +9,9 @@ typedef struct {
     u32 vbo;
     u32 ebo;
     u32 program;
+    u32 texture;
     i32 u_mvp;
+    i32 u_tex;
     u32 index_count;
 } renderer_t;
 
