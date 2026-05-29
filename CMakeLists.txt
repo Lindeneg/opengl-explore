@@ -22,6 +22,7 @@ add_executable(App
         src/render/gl.c
         src/render/shader.c
         src/render/renderer.c
+        src/render/texture.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)
@@ -29,6 +30,8 @@ target_include_directories(App SYSTEM PRIVATE third_party)
 find_package(Threads REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Stb REQUIRED)
+target_include_directories(App SYSTEM PRIVATE ${Stb_INCLUDE_DIR})
 target_link_libraries(App PRIVATE Threads::Threads glfw OpenGL::GL)
 
 #add_custom_command(TARGET App POST_BUILD
