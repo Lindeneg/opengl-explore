@@ -1,4 +1,4 @@
-.PHONY: generate build run format
+.PHONY: generate build run format clean
 
 generate:
 	cmake --preset default
@@ -11,3 +11,6 @@ run:
 
 format:
 	clang-format -i ./src/*.c ./src/core/*.c ./src/game/*.c ./src/platform/*.c ./src/math/*.c ./src/render/*.c
+
+clean:
+	rm -rf build compile_commands.json .cache

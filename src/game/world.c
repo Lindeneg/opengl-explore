@@ -40,7 +40,8 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
         if (lvl->assets[i].kind == ASSET_MESH)
             ra.mesh[i] = assets_load_mesh(assets, scratch, lvl->assets[i].path);
         else
-            ra.tex[i] = assets_load_texture(assets, scratch, lvl->assets[i].path, lvl->assets[i].flip);
+            ra.tex[i] =
+                assets_load_texture(assets, scratch, lvl->assets[i].path, lvl->assets[i].flip);
     }
 
     world_t w = {0};
