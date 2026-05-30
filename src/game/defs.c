@@ -78,3 +78,26 @@ const resource_def_t *defs_find_resource(const defs_t *defs, const char *id) {
             return &defs->resources[i];
     return NULL;
 }
+
+void defs_parse_tier(defs_t *d, char **cur) {
+    char *id = text_next_token(cur), *rad = text_next_token(cur);
+    char *maxb = text_next_token(cur), *slots = text_next_token(cur);
+    if (!(id && rad && maxb && slots)) {
+        LOG_WARN("defs: malformed tier line");
+        return;
+    }
+    ASSERT_RET_V_MSG(d->tier_count < DEFS_MAX_TIERS, "defs: too many tiers");
+
+    city_tier_def_t *t = &d->tiers[d->tier_count++];
+    str_copy(t->id, sizeof t->id, id);
+    t->radius = (u32)atoi(rad);
+    t->max_buildings = (u32)atoi(maxb);
+    t->industry_slots = (u32)atoi(slots);
+}
+
+const city_tier_def_t *defs_find_tier(const defs_t *defs, const char *id) {
+    for (u32 i = 0; i < defs->tier_count; ++i)
+        if (strcmp(defs->tiers[i].id, id) == 0)
+            return &defs->tiers[i];
+    return NULL;
+}

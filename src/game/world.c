@@ -33,6 +33,74 @@ static texture_handle object_tex(const level_t *l, const resolved_assets_t *ra, 
     return ai >= 0 ? ra->tex[ai] : ASSET_INVALID;
 }
 
+static void str_copy(char *dst, u64 cap, const char *src) {
+    if (cap == 0)
+        return;
+    u64 i = 0;
+    for (; src[i] && i < cap - 1; ++i)
+        dst[i] = src[i];
+    dst[i] = '\0';
+}
+
+// stable per-cell hash so a city's generated layout is identical every launch
+static u32 cell_hash(i32 x, i32 z) {
+    u32 h = ((u32)x * 73856093u) ^ ((u32)z * 19349663u);
+    h ^= h >> 13;
+    h *= 0x5bd1e995u;
+    h ^= h >> 15;
+    return h;
+}
+
+// fills each city's footprint with buildings from the level's building prototypes.
+// deterministic (no save/RNG yet); skips water, out-of-bounds and occupied cells so explicit
+// overrides/sites always win, and reserves the centre cell for a future industry.
+static void generate_city_buildings(world_t *w, const level_t *lvl, const resolved_assets_t *ra,
+                                    const defs_t *defs) {
+    const char *palette[LEVEL_MAX_OBJECTS];
+    u32 pal_count = 0;
+    for (u32 i = 0; i < lvl->object_count; ++i)
+        if (lvl->objects[i].kind == OBJ_BUILDING)
+            palette[pal_count++] = lvl->objects[i].id;
+    if (pal_count == 0)
+        return;
+
+    for (u32 ci = 0; ci < w->city_count; ++ci) {
+        const city_t *c = &w->cities[ci];
+        if (c->tier >= defs->tier_count)
+            continue;
+        const city_tier_def_t *td = &defs->tiers[c->tier];
+        i32 r = (i32)td->radius;
+        u32 placed = 0;
+        for (i32 dz = -r; dz <= r && placed < td->max_buildings; ++dz) {
+            for (i32 dx = -r; dx <= r && placed < td->max_buildings; ++dx) {
+                if (dx == 0 && dz == 0)
+                    continue; // reserve centre
+                i32 x = c->cx + dx, z = c->cz + dz;
+                if (x < 0 || x >= w->w || z < 0 || z >= w->h)
+                    continue;
+                if (((x + z) & 1) != ((c->cx + c->cz) & 1))
+                    continue; // checkerboard leaves gaps for streets/industry
+                i32 idx = z * w->w + x;
+                if (w->terrain[idx] == TERRAIN_WATER || w->tiles[idx].mesh != ASSET_INVALID)
+                    continue;
+                u32 h = cell_hash(x, z);
+                const char *proto = palette[h % pal_count];
+                mesh_handle mesh = object_mesh(lvl, ra, proto);
+                texture_handle tex = object_tex(lvl, ra, proto);
+                if (mesh == ASSET_INVALID || tex == ASSET_INVALID)
+                    continue;
+                const object_def_t *od = level_find_object(lvl, proto);
+                w->tiles[idx] = (tile_t){.mesh = mesh,
+                                         .tex = tex,
+                                         .kind = OBJ_BUILDING,
+                                         .scale = od ? od->scale : 1.0f,
+                                         .rot = (u8)((h >> 8) & 3)};
+                ++placed;
+            }
+        }
+    }
+}
+
 world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *assets,
                          arena_t *permanent, arena_t *scratch) {
     resolved_assets_t ra;
@@ -86,10 +154,18 @@ world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *asset
 
     u32 ncities = lvl->city_count ? lvl->city_count : 1;
     w.cities = push_array(permanent, city_t, ncities);
-    w.city_count = lvl->city_count;
-    for (u32 i = 0; i < lvl->city_count; ++i)
-        w.cities[i] = (city_t){
-            .cx = lvl->cities[i].cx, .cz = lvl->cities[i].cz, .radius = lvl->cities[i].radius};
+    for (u32 i = 0; i < lvl->city_count; ++i) {
+        const level_city_t *lc = &lvl->cities[i];
+        const city_tier_def_t *td = defs_find_tier(defs, lc->tier);
+        if (!td)
+            LOG_WARN("level: city (%d,%d) references unknown tier '%s'", lc->cx, lc->cz, lc->tier);
+        city_t *c = &w.cities[w.city_count++];
+        c->cx = lc->cx;
+        c->cz = lc->cz;
+        c->tier = td ? (u16)(td - defs->tiers) : 0;
+        c->radius = td ? td->radius : 0;
+        str_copy(c->name, sizeof c->name, lc->name);
+    }
 
     // resource sites, runtime entity plus a visual in the object layer (reuses world_draw)
     w.defs = defs;
@@ -121,6 +197,8 @@ world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *asset
                                            .replenish = rep,
                                            .stock = cap};
     }
+
+    generate_city_buildings(&w, lvl, &ra, defs);
 
     LOG_INFO("world: %u resources, %u cities, %u sites", defs->resource_count, w.city_count,
              w.site_count);

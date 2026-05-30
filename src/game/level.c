@@ -95,12 +95,13 @@ static void add_override(level_t *l, i32 x, i32 z, const char *id, u8 rot) {
     t->rot = rot;
 }
 
-static void add_city(level_t *l, i32 cx, i32 cz, u32 radius) {
+static void add_city(level_t *l, i32 cx, i32 cz, const char *tier, const char *name) {
     ASSERT_RET_V_MSG(l->city_count < LEVEL_MAX_CITIES, "level: too many cities");
     level_city_t *c = &l->cities[l->city_count++];
     c->cx = cx;
     c->cz = cz;
-    c->radius = radius;
+    str_copy(c->tier, sizeof c->tier, tier);
+    str_copy(c->name, sizeof c->name, name);
 }
 
 static void add_water(level_t *l, i32 x, i32 z) {
@@ -165,6 +166,8 @@ static void parse_line(level_t *l, defs_t *defs, arena_t *scratch, char *line) {
             LOG_WARN("level: malformed use line");
     } else if (strcmp(tok, "resource") == 0) {
         defs_parse_resource(defs, &cur);
+    } else if (strcmp(tok, "tier") == 0) {
+        defs_parse_tier(defs, &cur);
     } else if (strcmp(tok, "texture") == 0 || strcmp(tok, "mesh") == 0) {
         asset_kind_t kind = tok[0] == 't' ? ASSET_TEXTURE : ASSET_MESH;
         char *name = text_next_token(&cur), *path = text_next_token(&cur),
@@ -187,9 +190,10 @@ static void parse_line(level_t *l, defs_t *defs, arena_t *scratch, char *line) {
         if (id)
             str_copy(l->fill, sizeof l->fill, id);
     } else if (strcmp(tok, "city") == 0) {
-        char *a = text_next_token(&cur), *b = text_next_token(&cur), *c = text_next_token(&cur);
-        if (a && b && c)
-            add_city(l, atoi(a), atoi(b), (u32)atoi(c));
+        char *a = text_next_token(&cur), *b = text_next_token(&cur);
+        char *tier = text_next_token(&cur), *name = text_next_token(&cur);
+        if (a && b && tier)
+            add_city(l, atoi(a), atoi(b), tier, name ? name : "");
         else
             LOG_WARN("level: malformed city line");
     } else if (strcmp(tok, "site") == 0) {
@@ -285,7 +289,8 @@ b32 level_save(const level_t *l, const char *path) {
     fprintf(f, "\nfill %s\n\n", l->fill);
 
     for (u32 i = 0; i < l->city_count; ++i)
-        fprintf(f, "city %d %d %u\n", l->cities[i].cx, l->cities[i].cz, l->cities[i].radius);
+        fprintf(f, "city %d %d %s %s\n", l->cities[i].cx, l->cities[i].cz, l->cities[i].tier,
+                l->cities[i].name);
     fprintf(f, "\n");
 
     for (u32 i = 0; i < l->water_count; ++i)

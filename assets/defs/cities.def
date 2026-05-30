@@ -1,0 +1,8 @@
+# city size tiers — tier <id> <radius> <max_buildings> <industry_slots>
+# radius = footprint half-extent (a (2r+1)^2 square); industry_slots stored, unused for now
+tier homestead   1  2   0
+tier settlement  1  4   1
+tier town        2  9   2
+tier city        3  16  3
+tier metropolis  4  28  4
+tier megalopolis 5  44  6

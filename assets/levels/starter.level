@@ -3,6 +3,7 @@ level "Starter"
 grid 24 24 2.0
 
 use assets/defs/resources.def
+use assets/defs/cities.def
 use assets/defs/citybits.def
 use assets/defs/forest.def
 use assets/defs/resourcebits.def
@@ -28,26 +29,9 @@ water 16 6
 water 17 6
 water 18 6
 
-city 5 6 2
-city 17 18 2
-
-# town 1 (+ industry at the centre)
-tile 4 5 bldg_a 0
-tile 5 5 bldg_b 0
-tile 6 5 bldg_c 1
-tile 4 6 bldg_c 2
-tile 6 6 bldg_a 3
-tile 5 7 bldg_b 0
-tile 5 6 industry 0
-
-# town 2
-tile 16 17 bldg_a 0
-tile 17 17 bldg_b 1
-tile 18 17 bldg_c 2
-tile 16 18 bldg_c 0
-tile 18 18 bldg_a 0
-tile 17 19 bldg_b 0
-tile 17 18 industry 1
+# cities are seeds now — the generator grows buildings from the tier (defs/cities.def)
+city 5 6 town Oakhaven
+city 17 18 town Rivermouth
 
 # forest grove
 tile 8 14 tree_1 0

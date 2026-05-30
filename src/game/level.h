@@ -62,9 +62,12 @@ typedef struct {
     i32 x, z;
 } level_cell_t;
 
+// city seed: position + which tier def to grow it from + display name. The generator
+// (world_from_level) realizes buildings/industries into the world/save, not the level.
 typedef struct {
     i32 cx, cz;
-    u32 radius;
+    char tier[LEVEL_ID_LEN];
+    char name[LEVEL_ID_LEN];
 } level_city_t;
 
 // placed RAW resource site, references a resource def + the prototype that draws it

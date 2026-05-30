@@ -32,10 +32,13 @@ enum {
     PATH_PRESENT = 1 << 4,
 };
 
-// city node on the grid, a trade endpoint connected by rail later
+// city instance on the grid: a trade endpoint the generator grows from its tier.
+// realized per-game state (buildings live in world.tiles; industries/supply come later)
 typedef struct {
     i32 cx, cz;
-    u32 radius;
+    u16 tier;   // index into defs->tiers
+    u32 radius; // footprint half-extent, copied from the tier for picking/growth
+    char name[LEVEL_ID_LEN];
 } city_t;
 
 // RAW resource site, a cell that yields a resource (stock not yet simulated)
