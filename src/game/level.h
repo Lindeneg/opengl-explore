@@ -9,6 +9,7 @@
 #define LEVEL_MAX_ASSETS 64
 #define LEVEL_MAX_OBJECTS 64
 #define LEVEL_MAX_OVERRIDES 8192
+#define LEVEL_MAX_WATER 8192
 #define LEVEL_MAX_CITIES 64
 
 typedef enum {
@@ -24,10 +25,18 @@ typedef struct {
 } asset_decl_t;
 
 typedef enum {
-    OBJ_GROUND,
-    OBJ_BUILDING,
-    OBJ_ROAD,
+    OBJ_GROUND,   // terrain base mesh (used by `fill`)
+    OBJ_BUILDING, // full tile incl. its own base -> replaces the ground under it
+    OBJ_ROAD,     // full tile, drawn via the path layer
+    OBJ_INDUSTRY, // like a building, but flagged as an industry site
+    OBJ_NATURE,   // tree/bush -> sits on top of the ground
+    OBJ_RESOURCE, // resource site prop -> sits on top of the ground
 } object_kind_t;
+
+// True for kinds whose mesh includes its own base (so the ground tile is not drawn under them).
+static inline b8 object_kind_replaces_ground(object_kind_t k) {
+    return k == OBJ_BUILDING || k == OBJ_INDUSTRY;
+}
 
 // A prototype: what a tile can be. References assets by name, not path.
 typedef struct {
@@ -35,6 +44,7 @@ typedef struct {
     object_kind_t kind;
     char mesh[LEVEL_ID_LEN]; // asset_decl name
     char tex[LEVEL_ID_LEN];  // asset_decl name
+    f32 scale;               // uniform scale applied when drawn (1 = native)
 } object_def_t;
 
 // A non-fill cell: which prototype sits at (x,z) and its quarter-turn rotation.
@@ -43,6 +53,10 @@ typedef struct {
     char object[LEVEL_ID_LEN];
     u8 rot;
 } tile_override_t;
+
+typedef struct {
+    i32 x, z;
+} level_cell_t;
 
 typedef struct {
     i32 cx, cz;
@@ -66,6 +80,9 @@ typedef struct {
 
     tile_override_t overrides[LEVEL_MAX_OVERRIDES];
     u32 override_count;
+
+    level_cell_t water[LEVEL_MAX_WATER]; // cells whose terrain is water (else ground)
+    u32 water_count;
 
     level_city_t cities[LEVEL_MAX_CITIES];
     u32 city_count;

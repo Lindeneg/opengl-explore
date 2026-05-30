@@ -46,7 +46,8 @@
     X(PFNGLGENERATEMIPMAPPROC, glGenerateMipmap)                                                   \
     X(PFNGLACTIVETEXTUREPROC, glActiveTexture)                                                     \
     X(PFNGLDELETETEXTURESPROC, glDeleteTextures)                                                   \
-    X(PFNGLUNIFORM1IPROC, glUniform1i)
+    X(PFNGLUNIFORM1IPROC, glUniform1i)                                                             \
+    X(PFNGLUNIFORM4FPROC, glUniform4f)
 
 #define X(type, name) extern type name;
 GL_FUNCTIONS(X)

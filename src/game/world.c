@@ -48,7 +48,7 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
     w.h = lvl->h;
     w.tile_size = lvl->tile_size;
     w.ground = object_mesh(lvl, &ra, lvl->fill);
-    texture_handle ground_tex = object_tex(lvl, &ra, lvl->fill);
+    w.ground_tex = object_tex(lvl, &ra, lvl->fill);
     w.road_straight = object_mesh(lvl, &ra, "road_straight");
     w.road_corner = object_mesh(lvl, &ra, "road_corner");
     w.road_tsplit = object_mesh(lvl, &ra, "road_tsplit");
@@ -56,21 +56,28 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
     w.road_tex = object_tex(lvl, &ra, "road_straight");
 
     u64 cells = (u64)w.w * (u64)w.h;
-    w.tiles = push_array(permanent, tile_t, cells);
+    w.terrain = push_array_z(permanent, u8, cells); // 0 = TERRAIN_GROUND
     w.paths = push_array_z(permanent, u8, cells);
-    for (u64 i = 0; i < cells; ++i) {
-        w.tiles[i].mesh = w.ground;
-        w.tiles[i].tex = ground_tex;
-        w.tiles[i].rot = 0;
+    w.tiles = push_array(permanent, tile_t, cells);
+    for (u64 i = 0; i < cells; ++i)
+        w.tiles[i] = (tile_t){.mesh = ASSET_INVALID, .tex = ASSET_INVALID, .scale = 1.0f};
+
+    for (u32 i = 0; i < lvl->water_count; ++i) {
+        i32 x = lvl->water[i].x, z = lvl->water[i].z;
+        if (x >= 0 && x < w.w && z >= 0 && z < w.h)
+            w.terrain[z * w.w + x] = TERRAIN_WATER;
     }
 
     for (u32 i = 0; i < lvl->override_count; ++i) {
         const tile_override_t *t = &lvl->overrides[i];
         if (t->x < 0 || t->x >= w.w || t->z < 0 || t->z >= w.h)
             continue;
+        const object_def_t *od = level_find_object(lvl, t->object);
         tile_t *cell = &w.tiles[t->z * w.w + t->x];
         cell->mesh = object_mesh(lvl, &ra, t->object);
         cell->tex = object_tex(lvl, &ra, t->object);
+        cell->kind = od ? od->kind : OBJ_BUILDING;
+        cell->scale = od ? od->scale : 1.0f;
         cell->rot = t->rot;
     }
 
@@ -100,25 +107,39 @@ b32 world_world_to_cell(const world_t *w, vec3_t p, i32 *cx, i32 *cz) {
 }
 
 static void draw_cell(const world_t *w, assets_t *assets, renderer_t *r, mesh_handle mesh,
-                      texture_handle tex, u8 rot, i32 x, i32 z) {
+                      texture_handle tex, f32 scale, u8 rot, i32 x, i32 z) {
     if (mesh == ASSET_INVALID || tex == ASSET_INVALID)
         return;
     vec3_t pos = world_cell_world(w, x, z);
-    mat4_t model =
-        mat4_mul(mat4_translate(pos), mat4_rotate(vec3(0.0f, 1.0f, 0.0f), (f32)rot * (PI * 0.5f)));
+    mat4_t model = mat4_mul(mat4_translate(pos),
+                            mat4_mul(mat4_rotate(vec3(0.0f, 1.0f, 0.0f), (f32)rot * (PI * 0.5f)),
+                                     mat4_scale(vec3(scale, scale, scale))));
     renderer_draw(r, assets_mesh(assets, mesh), &model, assets_texture_gl(assets, tex));
+}
+
+static void draw_terrain(const world_t *w, assets_t *assets, renderer_t *r, i32 x, i32 z) {
+    if (w->terrain[z * w->w + x] == TERRAIN_WATER) {
+        vec3_t pos = world_cell_world(w, x, z);
+        mat4_t model =
+            mat4_mul(mat4_translate(pos), mat4_scale(vec3(w->tile_size, 1.0f, w->tile_size)));
+        renderer_fill_quad(r, &model, (vec4_t){0.16f, 0.38f, 0.60f, 1.0f});
+    } else {
+        draw_cell(w, assets, r, w->ground, w->ground_tex, 1.0f, 0, x, z);
+    }
 }
 
 void world_draw(const world_t *w, assets_t *assets, renderer_t *r) {
     for (i32 z = 0; z < w->h; ++z) {
         for (i32 x = 0; x < w->w; ++x) {
             i32 i = z * w->w + x;
-            tile_t t = w->tiles[i];
-            if (t.mesh == ASSET_INVALID)
-                continue;
             if (w->paths[i] & PATH_PRESENT)
-                continue; // a road tile replaces the ground here (drawn in world_draw_paths)
-            draw_cell(w, assets, r, t.mesh, t.tex, t.rot, x, z);
+                continue; // road tile (world_draw_paths) replaces terrain + object here
+            tile_t o = w->tiles[i];
+            b8 replace = o.mesh != ASSET_INVALID && object_kind_replaces_ground(o.kind);
+            if (!replace)
+                draw_terrain(w, assets, r, x, z);
+            if (o.mesh != ASSET_INVALID)
+                draw_cell(w, assets, r, o.mesh, o.tex, o.scale, o.rot, x, z);
         }
     }
 }
@@ -132,7 +153,7 @@ void world_draw_paths(const world_t *w, assets_t *assets, renderer_t *r) {
             mesh_handle mesh;
             u8 rot;
             world_path_mesh(w, p, &mesh, &rot);
-            draw_cell(w, assets, r, mesh, w->road_tex, rot, x, z);
+            draw_cell(w, assets, r, mesh, w->road_tex, 1.0f, rot, x, z);
         }
     }
 }
@@ -146,7 +167,8 @@ b32 world_has_path(const world_t *w, i32 x, i32 z) {
 b32 world_cell_buildable(const world_t *w, i32 x, i32 z) {
     if (x < 0 || x >= w->w || z < 0 || z >= w->h)
         return false;
-    return w->tiles[z * w->w + x].mesh == w->ground;
+    i32 i = z * w->w + x;
+    return w->terrain[i] == TERRAIN_GROUND && w->tiles[i].mesh == ASSET_INVALID;
 }
 
 static void recompute_mask(world_t *w, i32 x, i32 z) {

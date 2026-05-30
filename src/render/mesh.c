@@ -104,6 +104,38 @@ mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
     return m;
 }
 
+mesh_t mesh_make_quad(f32 size) {
+    f32 h = size * 0.5f;
+    // pos.xyz, uv.xy — flat on the XZ plane, facing +Y (uv unused by the colour shader)
+    f32 verts[] = {
+        -h, 0.0f, -h, 0.0f, 0.0f, h, 0.0f, -h, 1.0f, 0.0f,
+        h,  0.0f, h,  1.0f, 1.0f, -h, 0.0f, h, 0.0f, 1.0f,
+    };
+    u32 indices[] = {0, 1, 2, 0, 2, 3};
+
+    mesh_t m = {0};
+    glGenVertexArrays(1, &m.vao);
+    glBindVertexArray(m.vao);
+
+    glGenBuffers(1, &m.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof verts, verts, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &m.ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+    m.index_count = 6;
+
+    GLsizei stride = (GLsizei)(5 * sizeof(f32));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (const void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (const void *)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+    return m;
+}
+
 void mesh_destroy(mesh_t *m) {
     glDeleteBuffers(1, &m->vbo);
     glDeleteBuffers(1, &m->ebo);

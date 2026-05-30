@@ -8,10 +8,18 @@
 #include "../render/renderer.h"
 #include "level.h"
 
+typedef enum {
+    TERRAIN_GROUND,
+    TERRAIN_WATER,
+} terrain_t;
+
+// An object sitting on a cell (building, tree, resource, …). ASSET_INVALID mesh = no object.
 typedef struct {
-    mesh_handle mesh;   // ASSET_INVALID = empty
-    texture_handle tex; // atlas this tile's mesh samples
-    u8 rot;             // quarter turns, 0..3
+    mesh_handle mesh;
+    texture_handle tex;  // atlas this object's mesh samples
+    object_kind_t kind;  // drives whether it replaces the ground tile under it
+    f32 scale;           // uniform scale (1 = native)
+    u8 rot;              // quarter turns, 0..3
 } tile_t;
 
 // Per-cell path bits. Low 4 = neighbour connectivity (N=-z, E=+x, S=+z, W=-x),
@@ -33,12 +41,14 @@ typedef struct {
 typedef struct {
     i32 w, h;
     f32 tile_size;
-    tile_t *tiles; // w * h
+    u8 *terrain;   // w * h, terrain_t per cell
+    tile_t *tiles; // w * h, objects on top of the terrain (ASSET_INVALID = none)
     u8 *paths;     // w * h, PATH_* bitmask; 0 = no path
     city_t *cities;
     u32 city_count;
 
-    mesh_handle ground;
+    mesh_handle ground;      // terrain ground mesh (from the `fill` prototype)
+    texture_handle ground_tex;
     mesh_handle road_straight, road_corner, road_tsplit, road_junction;
     texture_handle road_tex; // atlas shared by the road meshes
 } world_t;
