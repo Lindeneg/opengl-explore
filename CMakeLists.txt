@@ -27,6 +27,11 @@ add_executable(App
         src/render/texture.c
         src/render/mesh.c
         src/render/camera.c
+        src/render/assets.c
+
+        src/game/world.c
+        src/game/build.c
+        src/game/level.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)

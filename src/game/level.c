@@ -1,0 +1,333 @@
+#include "level.h"
+
+#include <string.h>
+
+#include "../core/file.h"
+#include "../core/log.h"
+
+static FILE *os_fopen(const char *path, const char *mode) {
+#if PLATFORM_WINDOWS
+    FILE *f = NULL;
+    fopen_s(&f, path, mode);
+    return f;
+#elif PLATFORM_LINUX
+    return fopen(path, mode);
+#endif
+}
+
+#define KAYKIT_DIR                                                                                 \
+    "assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/"
+
+static u32 g_rng;
+static u32 rng_next(void) {
+    u32 x = g_rng;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    g_rng = x;
+    return x;
+}
+static u32 rng_range(u32 n) { return rng_next() % n; }
+
+static void str_copy(char *dst, u64 cap, const char *src) {
+    if (cap == 0)
+        return;
+    u64 i = 0;
+    for (; src[i] && i < cap - 1; ++i)
+        dst[i] = src[i];
+    dst[i] = '\0';
+}
+
+static const char *obj_kind_str(object_kind_t k) {
+    switch (k) {
+    case OBJ_BUILDING:
+        return "building";
+    case OBJ_ROAD:
+        return "road";
+    case OBJ_GROUND:
+    default:
+        return "ground";
+    }
+}
+
+static b32 obj_kind_parse(const char *s, object_kind_t *out) {
+    if (strcmp(s, "ground") == 0) {
+        *out = OBJ_GROUND;
+        return true;
+    }
+    if (strcmp(s, "building") == 0) {
+        *out = OBJ_BUILDING;
+        return true;
+    }
+    if (strcmp(s, "road") == 0) {
+        *out = OBJ_ROAD;
+        return true;
+    }
+    return false;
+}
+
+const object_def_t *level_find_object(const level_t *l, const char *id) {
+    for (u32 i = 0; i < l->object_count; ++i)
+        if (strcmp(l->objects[i].id, id) == 0)
+            return &l->objects[i];
+    return NULL;
+}
+
+static void add_asset(level_t *l, const char *name, const char *path, asset_kind_t kind) {
+    ASSERT_RET_V_MSG(l->asset_count < LEVEL_MAX_ASSETS, "level: too many assets");
+    asset_decl_t *a = &l->assets[l->asset_count++];
+    str_copy(a->name, sizeof a->name, name);
+    str_copy(a->path, sizeof a->path, path);
+    a->kind = kind;
+}
+
+static void add_object(level_t *l, const char *id, object_kind_t kind, const char *mesh,
+                       const char *tex) {
+    ASSERT_RET_V_MSG(l->object_count < LEVEL_MAX_OBJECTS, "level: too many objects");
+    object_def_t *o = &l->objects[l->object_count++];
+    str_copy(o->id, sizeof o->id, id);
+    o->kind = kind;
+    str_copy(o->mesh, sizeof o->mesh, mesh);
+    str_copy(o->tex, sizeof o->tex, tex);
+}
+
+static void add_override(level_t *l, i32 x, i32 z, const char *id, u8 rot) {
+    ASSERT_RET_V_MSG(l->override_count < LEVEL_MAX_OVERRIDES, "level: too many tile overrides");
+    tile_override_t *t = &l->overrides[l->override_count++];
+    t->x = x;
+    t->z = z;
+    str_copy(t->object, sizeof t->object, id);
+    t->rot = rot;
+}
+
+static void add_city(level_t *l, i32 cx, i32 cz, u32 radius) {
+    ASSERT_RET_V_MSG(l->city_count < LEVEL_MAX_CITIES, "level: too many cities");
+    level_city_t *c = &l->cities[l->city_count++];
+    c->cx = cx;
+    c->cz = cz;
+    c->radius = radius;
+}
+
+level_t *level_generate(arena_t *scratch, u32 seed) {
+    g_rng = seed ? seed : 1;
+
+    level_t *l = push_struct_z(scratch, level_t);
+    str_copy(l->name, sizeof l->name, "Generated");
+    l->w = 32;
+    l->h = 32;
+    l->tile_size = 2.0f;
+    str_copy(l->fill, sizeof l->fill, "ground");
+
+    add_asset(l, "atlas", KAYKIT_DIR "citybits_texture.png", ASSET_TEXTURE);
+    add_asset(l, "m_ground", KAYKIT_DIR "base.gltf", ASSET_MESH);
+    add_object(l, "ground", OBJ_GROUND, "m_ground", "atlas");
+
+    // Road prototypes use the well-known ids world_from_level looks up for the auto-tiler.
+    const char *road_ids[4] = {"road_straight", "road_corner", "road_tsplit", "road_junction"};
+    const char *road_files[4] = {"road_straight.gltf", "road_corner.gltf", "road_tsplit.gltf",
+                                 "road_junction.gltf"};
+    for (i32 i = 0; i < 4; ++i) {
+        char asset[LEVEL_ID_LEN], path[LEVEL_PATH_LEN];
+        snprintf(asset, sizeof asset, "m_%s", road_ids[i]);
+        snprintf(path, sizeof path, "%s%s", KAYKIT_DIR, road_files[i]);
+        add_asset(l, asset, path, ASSET_MESH);
+        add_object(l, road_ids[i], OBJ_ROAD, asset, "atlas");
+    }
+
+    for (i32 i = 0; i < 8; ++i) {
+        char id[LEVEL_ID_LEN], asset[LEVEL_ID_LEN], path[LEVEL_PATH_LEN];
+        snprintf(id, sizeof id, "bldg_%c", 'a' + i);
+        snprintf(asset, sizeof asset, "m_bldg_%c", 'a' + i);
+        snprintf(path, sizeof path, "%sbuilding_%c.gltf", KAYKIT_DIR, 'A' + i);
+        add_asset(l, asset, path, ASSET_MESH);
+        add_object(l, id, OBJ_BUILDING, asset, "atlas");
+    }
+
+    const u32 max_cities = 5;
+    u32 attempts = 0;
+    while (l->city_count < max_cities && attempts++ < 1000) {
+        i32 cx = 3 + (i32)rng_range((u32)l->w - 6);
+        i32 cz = 3 + (i32)rng_range((u32)l->h - 6);
+
+        b32 too_close = false;
+        for (u32 c = 0; c < l->city_count; ++c) {
+            i32 dx = l->cities[c].cx - cx, dz = l->cities[c].cz - cz;
+            if (dx * dx + dz * dz < 64) {
+                too_close = true;
+                break;
+            }
+        }
+        if (too_close)
+            continue;
+
+        u32 radius = 2;
+        add_city(l, cx, cz, radius);
+
+        for (i32 dz = -(i32)radius; dz <= (i32)radius; ++dz) {
+            for (i32 dx = -(i32)radius; dx <= (i32)radius; ++dx) {
+                i32 tx = cx + dx, tz = cz + dz;
+                if (tx < 0 || tx >= l->w || tz < 0 || tz >= l->h)
+                    continue;
+                if (rng_range(3) == 0)
+                    continue; // leave gaps for variety
+                char id[LEVEL_ID_LEN];
+                snprintf(id, sizeof id, "bldg_%c", 'a' + (i32)rng_range(8));
+                add_override(l, tx, tz, id, (u8)rng_range(4));
+            }
+        }
+    }
+
+    return l;
+}
+
+static char *trim(char *s) {
+    while (*s == ' ' || *s == '\t' || *s == '"' || *s == '\r')
+        ++s;
+    u64 n = strlen(s);
+    while (n > 0 && (s[n - 1] == ' ' || s[n - 1] == '\t' || s[n - 1] == '"' || s[n - 1] == '\r'))
+        s[--n] = '\0';
+    return s;
+}
+
+// Whitespace-delimited tokenizer over one line; null-terminates each token in place and advances
+// *cursor past it. Returns NULL when the line is exhausted.
+static char *next_token(char **cursor) {
+    char *s = *cursor;
+    while (*s == ' ' || *s == '\t' || *s == '\r')
+        ++s;
+    if (*s == '\0') {
+        *cursor = s;
+        return NULL;
+    }
+    char *start = s;
+    while (*s && *s != ' ' && *s != '\t' && *s != '\r')
+        ++s;
+    if (*s)
+        *s++ = '\0';
+    *cursor = s;
+    return start;
+}
+
+static void parse_line(level_t *l, char *line) {
+    char *hash = strchr(line, '#');
+    if (hash)
+        *hash = '\0';
+
+    char *cur = line;
+    char *tok = next_token(&cur);
+    if (!tok)
+        return;
+
+    if (strcmp(tok, "level") == 0) {
+        char *rest = trim(cur); // remainder of the line is the (possibly quoted) name
+        if (*rest)
+            str_copy(l->name, sizeof l->name, rest);
+    } else if (strcmp(tok, "grid") == 0) {
+        char *a = next_token(&cur), *b = next_token(&cur), *c = next_token(&cur);
+        if (a)
+            l->w = atoi(a);
+        if (b)
+            l->h = atoi(b);
+        if (c)
+            l->tile_size = (f32)atof(c);
+    } else if (strcmp(tok, "texture") == 0 || strcmp(tok, "mesh") == 0) {
+        asset_kind_t kind = tok[0] == 't' ? ASSET_TEXTURE : ASSET_MESH;
+        char *name = next_token(&cur), *path = next_token(&cur);
+        if (name && path)
+            add_asset(l, name, path, kind);
+        else
+            LOG_WARN("level: malformed asset line");
+    } else if (strcmp(tok, "object") == 0) {
+        char *id = next_token(&cur), *ks = next_token(&cur);
+        char *mesh = next_token(&cur), *tex = next_token(&cur);
+        object_kind_t kind;
+        if (id && ks && mesh && tex && obj_kind_parse(ks, &kind))
+            add_object(l, id, kind, mesh, tex);
+        else
+            LOG_WARN("level: malformed object line");
+    } else if (strcmp(tok, "fill") == 0) {
+        char *id = next_token(&cur);
+        if (id)
+            str_copy(l->fill, sizeof l->fill, id);
+    } else if (strcmp(tok, "city") == 0) {
+        char *a = next_token(&cur), *b = next_token(&cur), *c = next_token(&cur);
+        if (a && b && c)
+            add_city(l, atoi(a), atoi(b), (u32)atoi(c));
+        else
+            LOG_WARN("level: malformed city line");
+    } else if (strcmp(tok, "tile") == 0) {
+        char *a = next_token(&cur), *b = next_token(&cur);
+        char *id = next_token(&cur), *r = next_token(&cur);
+        if (a && b && id)
+            add_override(l, atoi(a), atoi(b), id, r ? (u8)atoi(r) : 0);
+        else
+            LOG_WARN("level: malformed tile line");
+    } else if (strcmp(tok, "path") == 0) {
+        // reserved: player paths persist here once building + UI lands
+    } else {
+        LOG_WARN("level: unknown directive '%s'", tok);
+    }
+}
+
+level_t *level_load(arena_t *scratch, const char *path) {
+    file_data_t fd = file_read(scratch, path);
+    if (!fd.data)
+        return NULL;
+
+    level_t *l = push_struct_z(scratch, level_t);
+    l->w = 32;
+    l->h = 32;
+    l->tile_size = 2.0f;
+    str_copy(l->fill, sizeof l->fill, "ground");
+
+    char *cur = (char *)fd.data;
+    while (*cur) {
+        char *eol = cur;
+        while (*eol && *eol != '\n')
+            ++eol;
+        char saved = *eol;
+        *eol = '\0';
+        parse_line(l, cur);
+        if (saved == '\0')
+            break;
+        cur = eol + 1;
+    }
+    return l;
+}
+
+static const char *asset_kind_str(asset_kind_t k) {
+    return k == ASSET_TEXTURE ? "texture" : "mesh";
+}
+
+b32 level_save(const level_t *l, const char *path) {
+    FILE *f = os_fopen(path, "w");
+    ASSERT_RET_MSG(f != NULL, false, "level_save: cannot open '%s'", path);
+
+    fprintf(f, "# tradingstuff level\n");
+    fprintf(f, "level \"%s\"\n", l->name);
+    fprintf(f, "grid %d %d %g\n\n", l->w, l->h, (double)l->tile_size);
+
+    for (u32 i = 0; i < l->asset_count; ++i)
+        fprintf(f, "%s %s %s\n", asset_kind_str(l->assets[i].kind), l->assets[i].name,
+                l->assets[i].path);
+    fprintf(f, "\n");
+
+    for (u32 i = 0; i < l->object_count; ++i) {
+        const object_def_t *o = &l->objects[i];
+        fprintf(f, "object %s %s %s %s\n", o->id, obj_kind_str(o->kind), o->mesh, o->tex);
+    }
+    fprintf(f, "\nfill %s\n\n", l->fill);
+
+    for (u32 i = 0; i < l->city_count; ++i)
+        fprintf(f, "city %d %d %u\n", l->cities[i].cx, l->cities[i].cz, l->cities[i].radius);
+    fprintf(f, "\n");
+
+    for (u32 i = 0; i < l->override_count; ++i) {
+        const tile_override_t *t = &l->overrides[i];
+        fprintf(f, "tile %d %d %s %u\n", t->x, t->z, t->object, t->rot);
+    }
+
+    fclose(f);
+    LOG_INFO("saved level to %s", path);
+    return true;
+}

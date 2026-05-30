@@ -30,3 +30,28 @@ mat4_t camera_proj(const camera_t *c, f32 aspect) {
     (void)c;
     return mat4_perspective(deg2rad(50.0f), aspect, 0.1f, 1000.0f);
 }
+
+// inv = inverse(view_proj); unproject the NDC point at the given depth into world space.
+static vec3_t unproject(const mat4_t *inv, f32 nx, f32 ny, f32 nz) {
+    const f32 *e = inv->e;
+    f32 x = e[0] * nx + e[4] * ny + e[8] * nz + e[12];
+    f32 y = e[1] * nx + e[5] * ny + e[9] * nz + e[13];
+    f32 z = e[2] * nx + e[6] * ny + e[10] * nz + e[14];
+    f32 w = e[3] * nx + e[7] * ny + e[11] * nz + e[15];
+    f32 iw = fabsf(w) > 1e-6f ? 1.0f / w : 0.0f;
+    return vec3(x * iw, y * iw, z * iw);
+}
+
+b32 camera_pick_ground(const camera_t *c, f32 aspect, f32 ndc_x, f32 ndc_y, vec3_t *out_world) {
+    mat4_t inv = mat4_inverse(mat4_mul(camera_proj(c, aspect), camera_view(c)));
+    vec3_t ray_near = unproject(&inv, ndc_x, ndc_y, -1.0f);
+    vec3_t ray_far = unproject(&inv, ndc_x, ndc_y, 1.0f);
+    vec3_t dir = vec3_sub(ray_far, ray_near);
+    if (fabsf(dir.y) < 1e-6f)
+        return false;
+    f32 t = -ray_near.y / dir.y;
+    if (t < 0.0f)
+        return false;
+    *out_world = vec3_add(ray_near, vec3_scale(dir, t));
+    return true;
+}

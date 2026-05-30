@@ -8,8 +8,8 @@
 mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
     cgltf_options options = {0};
     cgltf_data *data = NULL;
-    ASSERT_MSG(cgltf_parse_file(&options, path, &data) == cgltf_result_success, "gltf parse failed: %s",
-               path);
+    ASSERT_MSG(cgltf_parse_file(&options, path, &data) == cgltf_result_success,
+               "gltf parse failed: %s", path);
     ASSERT_MSG(cgltf_load_buffers(&options, data, path) == cgltf_result_success,
                "gltf buffers failed: %s", path);
 
@@ -83,7 +83,8 @@ mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
 
     glGenBuffers(1, &m.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(vert_count * 5 * sizeof(f32)), verts, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(vert_count * 5 * sizeof(f32)), verts,
+                 GL_STATIC_DRAW);
 
     glGenBuffers(1, &m.ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);

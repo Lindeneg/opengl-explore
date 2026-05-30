@@ -5,11 +5,18 @@
 
 static GLFWwindow *g_window;
 static f64 g_scroll_accum;
+static b8 g_mouse_cur[MOUSE_COUNT];
+static b8 g_mouse_prev[MOUSE_COUNT];
 
 static const int KEY_TO_GLFW[KEY_COUNT] = {
-    [KEY_W] = GLFW_KEY_W,         [KEY_A] = GLFW_KEY_A,         [KEY_S] = GLFW_KEY_S,
-    [KEY_D] = GLFW_KEY_D,         [KEY_UP] = GLFW_KEY_UP,       [KEY_DOWN] = GLFW_KEY_DOWN,
-    [KEY_LEFT] = GLFW_KEY_LEFT,   [KEY_RIGHT] = GLFW_KEY_RIGHT, [KEY_ESCAPE] = GLFW_KEY_ESCAPE,
+    [KEY_W] = GLFW_KEY_W,       [KEY_A] = GLFW_KEY_A,         [KEY_S] = GLFW_KEY_S,
+    [KEY_D] = GLFW_KEY_D,       [KEY_UP] = GLFW_KEY_UP,       [KEY_DOWN] = GLFW_KEY_DOWN,
+    [KEY_LEFT] = GLFW_KEY_LEFT, [KEY_RIGHT] = GLFW_KEY_RIGHT, [KEY_ESCAPE] = GLFW_KEY_ESCAPE,
+};
+
+static const int MOUSE_TO_GLFW[MOUSE_COUNT] = {
+    [MOUSE_LEFT] = GLFW_MOUSE_BUTTON_LEFT,
+    [MOUSE_RIGHT] = GLFW_MOUSE_BUTTON_RIGHT,
 };
 
 static void scroll_callback(GLFWwindow *w, double xoff, double yoff) {
@@ -23,7 +30,18 @@ void input_init(window_t *w) {
     glfwSetScrollCallback(g_window, scroll_callback);
 }
 
+void input_update(void) {
+    for (i32 i = 0; i < MOUSE_COUNT; ++i) {
+        g_mouse_prev[i] = g_mouse_cur[i];
+        g_mouse_cur[i] = glfwGetMouseButton(g_window, MOUSE_TO_GLFW[i]) == GLFW_PRESS;
+    }
+}
+
 b32 input_key_down(key_t k) { return glfwGetKey(g_window, KEY_TO_GLFW[k]) == GLFW_PRESS; }
+
+b32 input_mouse_down(mouse_button_t b) { return g_mouse_cur[b]; }
+b32 input_mouse_pressed(mouse_button_t b) { return g_mouse_cur[b] && !g_mouse_prev[b]; }
+b32 input_mouse_released(mouse_button_t b) { return !g_mouse_cur[b] && g_mouse_prev[b]; }
 
 void input_mouse(f32 *x, f32 *y) {
     double cx, cy;

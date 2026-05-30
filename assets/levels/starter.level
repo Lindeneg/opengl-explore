@@ -1,0 +1,42 @@
+# tradingstuff level — hand-authored starter (proves the format is human-writable)
+level "Starter"
+grid 16 16 2.0
+
+# dependencies: <kind> <name> <path>  (paths are repo-root relative, forward slashes)
+texture atlas         assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png
+mesh    m_ground      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
+mesh    m_bldg_a      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_A.gltf
+mesh    m_bldg_b      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_B.gltf
+mesh    m_bldg_c      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_C.gltf
+mesh    m_road_straight assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_straight.gltf
+mesh    m_road_corner   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_corner.gltf
+mesh    m_road_tsplit   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_tsplit.gltf
+mesh    m_road_junction assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_junction.gltf
+
+# prototypes: object <id> <kind: ground|building|road> <mesh> <texture>
+object ground         ground   m_ground         atlas
+object bldg_a         building m_bldg_a         atlas
+object bldg_b         building m_bldg_b         atlas
+object bldg_c         building m_bldg_c         atlas
+object road_straight  road     m_road_straight  atlas
+object road_corner    road     m_road_corner    atlas
+object road_tsplit    road     m_road_tsplit    atlas
+object road_junction  road     m_road_junction  atlas
+
+fill ground
+
+# city <cx> <cz> <radius>
+city 4 4 1
+city 11 10 1
+
+# tile <x> <z> <object> [rot]
+tile 3 3 bldg_a 0
+tile 4 3 bldg_b 1
+tile 3 4 bldg_c 2
+tile 5 4 bldg_a 3
+tile 4 5 bldg_b 0
+tile 10 9  bldg_c 0
+tile 11 9  bldg_a 1
+tile 12 10 bldg_b 2
+tile 10 11 bldg_a 0
+tile 11 11 bldg_c 3

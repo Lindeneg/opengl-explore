@@ -51,5 +51,6 @@ mat4_t mat4_scale(vec3_t s);
 mat4_t mat4_rotate(vec3_t axis, f32 radians);
 mat4_t mat4_perspective(f32 fovy_radians, f32 aspect, f32 znear, f32 zfar);
 mat4_t mat4_look_at(vec3_t eye, vec3_t center, vec3_t up);
+mat4_t mat4_inverse(mat4_t m); // identity if singular
 
 #endif // TRADING_STUFF_MATH_H_

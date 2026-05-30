@@ -1,0 +1,255 @@
+#include "world.h"
+
+#include <string.h>
+
+// Engine handles for a level's declared assets, indexed parallel to level_t.assets.
+typedef struct {
+    mesh_handle mesh[LEVEL_MAX_ASSETS];
+    texture_handle tex[LEVEL_MAX_ASSETS];
+} resolved_assets_t;
+
+static i32 asset_index(const level_t *l, const char *name) {
+    for (u32 i = 0; i < l->asset_count; ++i)
+        if (strcmp(l->assets[i].name, name) == 0)
+            return (i32)i;
+    return -1;
+}
+
+static mesh_handle object_mesh(const level_t *l, const resolved_assets_t *ra, const char *id) {
+    const object_def_t *o = level_find_object(l, id);
+    if (!o)
+        return ASSET_INVALID;
+    i32 ai = asset_index(l, o->mesh);
+    return ai >= 0 ? ra->mesh[ai] : ASSET_INVALID;
+}
+
+static texture_handle object_tex(const level_t *l, const resolved_assets_t *ra, const char *id) {
+    const object_def_t *o = level_find_object(l, id);
+    if (!o)
+        return ASSET_INVALID;
+    i32 ai = asset_index(l, o->tex);
+    return ai >= 0 ? ra->tex[ai] : ASSET_INVALID;
+}
+
+world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanent,
+                         arena_t *scratch) {
+    resolved_assets_t ra;
+    for (u32 i = 0; i < lvl->asset_count; ++i) {
+        ra.mesh[i] = ASSET_INVALID;
+        ra.tex[i] = ASSET_INVALID;
+        if (lvl->assets[i].kind == ASSET_MESH)
+            ra.mesh[i] = assets_load_mesh(assets, scratch, lvl->assets[i].path);
+        else
+            ra.tex[i] = assets_load_texture(assets, scratch, lvl->assets[i].path);
+    }
+
+    world_t w = {0};
+    w.w = lvl->w;
+    w.h = lvl->h;
+    w.tile_size = lvl->tile_size;
+    w.ground = object_mesh(lvl, &ra, lvl->fill);
+    w.atlas = object_tex(lvl, &ra, lvl->fill);
+    w.road_straight = object_mesh(lvl, &ra, "road_straight");
+    w.road_corner = object_mesh(lvl, &ra, "road_corner");
+    w.road_tsplit = object_mesh(lvl, &ra, "road_tsplit");
+    w.road_junction = object_mesh(lvl, &ra, "road_junction");
+    if (w.atlas == ASSET_INVALID) // fall back to the first declared texture
+        for (u32 i = 0; i < lvl->asset_count; ++i)
+            if (lvl->assets[i].kind == ASSET_TEXTURE) {
+                w.atlas = ra.tex[i];
+                break;
+            }
+
+    u64 cells = (u64)w.w * (u64)w.h;
+    w.tiles = push_array(permanent, tile_t, cells);
+    w.paths = push_array_z(permanent, u8, cells);
+    for (u64 i = 0; i < cells; ++i) {
+        w.tiles[i].mesh = w.ground;
+        w.tiles[i].rot = 0;
+    }
+
+    for (u32 i = 0; i < lvl->override_count; ++i) {
+        const tile_override_t *t = &lvl->overrides[i];
+        if (t->x < 0 || t->x >= w.w || t->z < 0 || t->z >= w.h)
+            continue;
+        tile_t *cell = &w.tiles[t->z * w.w + t->x];
+        cell->mesh = object_mesh(lvl, &ra, t->object);
+        cell->rot = t->rot;
+    }
+
+    u32 ncities = lvl->city_count ? lvl->city_count : 1;
+    w.cities = push_array(permanent, city_t, ncities);
+    w.city_count = lvl->city_count;
+    for (u32 i = 0; i < lvl->city_count; ++i)
+        w.cities[i] = (city_t){
+            .cx = lvl->cities[i].cx, .cz = lvl->cities[i].cz, .radius = lvl->cities[i].radius};
+
+    return w;
+}
+
+vec3_t world_cell_world(const world_t *w, i32 x, i32 z) {
+    return vec3(((f32)x - (f32)w->w * 0.5f) * w->tile_size, 0.0f,
+                ((f32)z - (f32)w->h * 0.5f) * w->tile_size);
+}
+
+b32 world_world_to_cell(const world_t *w, vec3_t p, i32 *cx, i32 *cz) {
+    i32 x = (i32)floorf(p.x / w->tile_size + (f32)w->w * 0.5f + 0.5f);
+    i32 z = (i32)floorf(p.z / w->tile_size + (f32)w->h * 0.5f + 0.5f);
+    if (x < 0 || x >= w->w || z < 0 || z >= w->h)
+        return false;
+    *cx = x;
+    *cz = z;
+    return true;
+}
+
+static void draw_cell(const world_t *w, assets_t *assets, renderer_t *r, mesh_handle mesh, u8 rot,
+                      i32 x, i32 z) {
+    vec3_t pos = world_cell_world(w, x, z);
+    mat4_t model =
+        mat4_mul(mat4_translate(pos), mat4_rotate(vec3(0.0f, 1.0f, 0.0f), (f32)rot * (PI * 0.5f)));
+    renderer_draw(r, assets_mesh(assets, mesh), &model);
+}
+
+void world_draw(const world_t *w, assets_t *assets, renderer_t *r) {
+    for (i32 z = 0; z < w->h; ++z) {
+        for (i32 x = 0; x < w->w; ++x) {
+            i32 i = z * w->w + x;
+            tile_t t = w->tiles[i];
+            if (t.mesh == ASSET_INVALID)
+                continue;
+            if (w->paths[i] & PATH_PRESENT)
+                continue; // a road tile replaces the ground here (drawn in world_draw_paths)
+            draw_cell(w, assets, r, t.mesh, t.rot, x, z);
+        }
+    }
+}
+
+void world_draw_paths(const world_t *w, assets_t *assets, renderer_t *r) {
+    for (i32 z = 0; z < w->h; ++z) {
+        for (i32 x = 0; x < w->w; ++x) {
+            u8 p = w->paths[z * w->w + x];
+            if (!(p & PATH_PRESENT))
+                continue;
+            mesh_handle mesh;
+            u8 rot;
+            world_path_mesh(w, p, &mesh, &rot);
+            draw_cell(w, assets, r, mesh, rot, x, z);
+        }
+    }
+}
+
+b32 world_has_path(const world_t *w, i32 x, i32 z) {
+    if (x < 0 || x >= w->w || z < 0 || z >= w->h)
+        return false;
+    return (w->paths[z * w->w + x] & PATH_PRESENT) != 0;
+}
+
+b32 world_cell_buildable(const world_t *w, i32 x, i32 z) {
+    if (x < 0 || x >= w->w || z < 0 || z >= w->h)
+        return false;
+    return w->tiles[z * w->w + x].mesh == w->ground;
+}
+
+static void recompute_mask(world_t *w, i32 x, i32 z) {
+    i32 i = z * w->w + x;
+    if (!(w->paths[i] & PATH_PRESENT)) {
+        w->paths[i] = 0;
+        return;
+    }
+    u8 m = PATH_PRESENT;
+    if (world_has_path(w, x, z - 1))
+        m |= PATH_N;
+    if (world_has_path(w, x + 1, z))
+        m |= PATH_E;
+    if (world_has_path(w, x, z + 1))
+        m |= PATH_S;
+    if (world_has_path(w, x - 1, z))
+        m |= PATH_W;
+    w->paths[i] = m;
+}
+
+static void recompute_around(world_t *w, i32 x, i32 z) {
+    recompute_mask(w, x, z);
+    if (z > 0)
+        recompute_mask(w, x, z - 1);
+    if (x < w->w - 1)
+        recompute_mask(w, x + 1, z);
+    if (z < w->h - 1)
+        recompute_mask(w, x, z + 1);
+    if (x > 0)
+        recompute_mask(w, x - 1, z);
+}
+
+void world_path_set(world_t *w, i32 x, i32 z) {
+    ASSERT_RET_V(x >= 0 && x < w->w && z >= 0 && z < w->h);
+    w->paths[z * w->w + x] |= PATH_PRESENT;
+    recompute_around(w, x, z);
+}
+
+void world_path_clear(world_t *w, i32 x, i32 z) {
+    ASSERT_RET_V(x >= 0 && x < w->w && z >= 0 && z < w->h);
+    w->paths[z * w->w + x] &= (u8)~PATH_PRESENT;
+    recompute_around(w, x, z);
+}
+
+// +90deg about +Y maps connection directions E->N, N->W, W->S, S->E.
+static u8 conn_rotate(u8 c) {
+    u8 r = 0;
+    if (c & PATH_E)
+        r |= PATH_N;
+    if (c & PATH_N)
+        r |= PATH_W;
+    if (c & PATH_W)
+        r |= PATH_S;
+    if (c & PATH_S)
+        r |= PATH_E;
+    return r;
+}
+
+static u8 conn_rot_to(u8 base, u8 target) {
+    u8 c = base;
+    for (u8 r = 0; r < 4; ++r) {
+        if (c == target)
+            return r;
+        c = conn_rotate(c);
+    }
+    return 0;
+}
+
+static i32 conn_count(u8 c) { return (c & 1) + ((c >> 1) & 1) + ((c >> 2) & 1) + ((c >> 3) & 1); }
+
+void world_path_mesh(const world_t *w, u8 conn, mesh_handle *mesh, u8 *rot) {
+    // Base orientations of the source meshes; flip these if a tile renders rotated wrong.
+    const u8 BASE_STRAIGHT = PATH_E | PATH_W;
+    const u8 BASE_CORNER = PATH_N | PATH_E;
+    const u8 BASE_TSPLIT = PATH_N | PATH_E | PATH_S;
+
+    u8 c = conn & 0x0F;
+    switch (conn_count(c)) {
+    case 4:
+        *mesh = w->road_junction;
+        *rot = 0;
+        return;
+    case 3:
+        *mesh = w->road_tsplit;
+        *rot = conn_rot_to(BASE_TSPLIT, c);
+        return;
+    case 2:
+        if (c == (PATH_N | PATH_S) || c == (PATH_E | PATH_W)) {
+            *mesh = w->road_straight;
+            *rot = conn_rot_to(BASE_STRAIGHT, c);
+        } else {
+            *mesh = w->road_corner;
+            *rot = conn_rot_to(BASE_CORNER, c);
+        }
+        return;
+    case 1:
+        *mesh = w->road_straight;
+        *rot = (c & (PATH_N | PATH_S)) ? conn_rot_to(BASE_STRAIGHT, PATH_N | PATH_S) : 0;
+        return;
+    default:
+        *mesh = w->road_straight;
+        *rot = 0;
+        return;
+    }
+}
