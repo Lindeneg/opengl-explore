@@ -15,6 +15,7 @@ add_executable(App
         src/core/log.c
         src/core/file.c
         src/core/path.c
+        src/core/text.c
 
         src/math/math.c
 
@@ -32,6 +33,7 @@ add_executable(App
         src/game/world.c
         src/game/build.c
         src/game/level.c
+        src/game/defs.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)

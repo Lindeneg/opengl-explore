@@ -2,6 +2,7 @@
 #include "core/mem.h"
 #include "core/path.h"
 #include "game/build.h"
+#include "game/defs.h"
 #include "game/level.h"
 #include "game/world.h"
 #include "math/math.h"
@@ -33,14 +34,16 @@ int main(void) {
     assets_t assets;
     assets_init(&assets, &permanent);
 
+    defs_t *defs = push_struct_z(&permanent, defs_t);
+
     const char *level_path = FPATH(&frame, "assets", "levels", "starter.level");
-    level_t *level = level_load(&frame, level_path);
+    level_t *level = level_load(&frame, defs, level_path);
     if (!level) {
         LOG_INFO("no level at %s; generating one", level_path);
-        level = level_generate(&frame, 1337);
+        level = level_generate(&frame, defs, 1337);
         level_save(level, level_path);
     }
-    world_t world = world_from_level(level, &assets, &permanent, &frame);
+    world_t world = world_from_level(level, defs, &assets, &permanent, &frame);
 
     camera_t cam = camera_make(vec3(0.0f, 0.0f, 0.0f), 40.0f, deg2rad(60.0f));
     build_tool_t tool = {0};

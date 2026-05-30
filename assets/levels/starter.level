@@ -4,6 +4,9 @@
 level "Starter"
 grid 24 24 2.0
 
+# reusable rulebook (resource definitions)
+use assets/defs/resources.def
+
 # --- City kit (citybits atlas; flip=1 — this pack authors UVs bottom-left) ---
 texture atlas           assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png 1
 mesh    m_ground        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
@@ -23,7 +26,6 @@ mesh    m_tree_2        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_
 texture resource_atlas  assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/resource_bits_texture.png
 mesh    m_iron          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Iron_Nuggets.gltf
 mesh    m_stone         assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Stone_Chunks_Large.gltf
-mesh    m_gold          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Gold_Nuggets.gltf
 
 # prototypes: object <id> <kind> <mesh> <texture> [scale]
 # kinds: ground | building | road | industry | nature | resource
@@ -41,7 +43,6 @@ object tree_1         nature   m_tree_1         forest_atlas
 object tree_2         nature   m_tree_2         forest_atlas
 object res_iron       resource m_iron           resource_atlas  2
 object res_stone      resource m_stone          resource_atlas  2
-object res_gold       resource m_gold           resource_atlas  2
 
 fill ground
 
@@ -95,8 +96,9 @@ tile 9 16 tree_1 3
 tile 11 15 tree_2 0
 tile 10 17 tree_1 1
 
-# resource sites (on ground, scaled up to read as deposits)
-tile 3 18 res_iron 0
-tile 4 18 res_iron 0
-tile 20 11 res_stone 0
-tile 13 7 res_gold 0
+# resource sites — site <x> <z> <resource> <object> [capacity] [replenish]
+# (capacity/replenish default from resources.def; visual prototype drawn on the ground)
+site 3 18 ore  res_iron
+site 4 18 ore  res_iron
+site 20 11 coal res_stone
+site 9 15 wood tree_2

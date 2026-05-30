@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "../core/log.h"
+
 // Engine handles for a level's declared assets, indexed parallel to level_t.assets.
 typedef struct {
     mesh_handle mesh[LEVEL_MAX_ASSETS];
@@ -31,8 +33,8 @@ static texture_handle object_tex(const level_t *l, const resolved_assets_t *ra, 
     return ai >= 0 ? ra->tex[ai] : ASSET_INVALID;
 }
 
-world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanent,
-                         arena_t *scratch) {
+world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *assets,
+                         arena_t *permanent, arena_t *scratch) {
     resolved_assets_t ra;
     for (u32 i = 0; i < lvl->asset_count; ++i) {
         ra.mesh[i] = ASSET_INVALID;
@@ -88,6 +90,45 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
     for (u32 i = 0; i < lvl->city_count; ++i)
         w.cities[i] = (city_t){
             .cx = lvl->cities[i].cx, .cz = lvl->cities[i].cz, .radius = lvl->cities[i].radius};
+
+    // Resource sites: a runtime entity plus a visual placed into the object layer (reuses world_draw).
+    w.defs = defs;
+    u32 nsites = lvl->site_count ? lvl->site_count : 1;
+    w.sites = push_array(permanent, site_t, nsites);
+    for (u32 i = 0; i < lvl->site_count; ++i) {
+        const level_site_t *ls = &lvl->sites[i];
+        const resource_def_t *rd = defs_find_resource(defs, ls->resource);
+        if (!rd) {
+            LOG_WARN("level: site (%d,%d) references unknown resource '%s'", ls->x, ls->z,
+                     ls->resource);
+            continue;
+        }
+        if (ls->x >= 0 && ls->x < w.w && ls->z >= 0 && ls->z < w.h) {
+            const object_def_t *od = level_find_object(lvl, ls->object);
+            tile_t *cell = &w.tiles[ls->z * w.w + ls->x];
+            cell->mesh = object_mesh(lvl, &ra, ls->object);
+            cell->tex = object_tex(lvl, &ra, ls->object);
+            cell->kind = od ? od->kind : OBJ_RESOURCE;
+            cell->scale = od ? od->scale : 1.0f;
+            cell->rot = 0;
+        }
+        f32 cap = ls->capacity > 0.0f ? ls->capacity : rd->site_capacity;
+        f32 rep = ls->replenish > 0.0f ? ls->replenish : rd->site_replenish;
+        w.sites[w.site_count++] = (site_t){.cx = ls->x,
+                                           .cz = ls->z,
+                                           .resource = (u16)(rd - defs->resources),
+                                           .capacity = cap,
+                                           .replenish = rep,
+                                           .stock = cap};
+    }
+
+    LOG_INFO("world: %u resources, %u cities, %u sites", defs->resource_count, w.city_count,
+             w.site_count);
+    for (u32 i = 0; i < w.site_count; ++i) {
+        const site_t *s = &w.sites[i];
+        LOG_INFO("  site (%d,%d) %s cap=%.0f replenish=%.2f", s->cx, s->cz,
+                 defs->resources[s->resource].id, (double)s->capacity, (double)s->replenish);
+    }
 
     return w;
 }

@@ -4,6 +4,7 @@
 
 #include "../core/file.h"
 #include "../core/log.h"
+#include "../core/text.h"
 
 static FILE *os_fopen(const char *path, const char *mode) {
 #if PLATFORM_WINDOWS
@@ -121,7 +122,23 @@ static void add_water(level_t *l, i32 x, i32 z) {
     l->water[l->water_count++] = (level_cell_t){x, z};
 }
 
-level_t *level_generate(arena_t *scratch, u32 seed) {
+static void add_use(level_t *l, const char *path) {
+    ASSERT_RET_V_MSG(l->use_count < LEVEL_MAX_USES, "level: too many use directives");
+    str_copy(l->uses[l->use_count++], LEVEL_PATH_LEN, path);
+}
+
+static void add_site(level_t *l, i32 x, i32 z, const char *res, const char *obj, f32 cap, f32 rep) {
+    ASSERT_RET_V_MSG(l->site_count < LEVEL_MAX_SITES, "level: too many sites");
+    level_site_t *s = &l->sites[l->site_count++];
+    s->x = x;
+    s->z = z;
+    str_copy(s->resource, sizeof s->resource, res);
+    str_copy(s->object, sizeof s->object, obj);
+    s->capacity = cap;
+    s->replenish = rep;
+}
+
+level_t *level_generate(arena_t *scratch, defs_t *defs, u32 seed) {
     g_rng = seed ? seed : 1;
 
     level_t *l = push_struct_z(scratch, level_t);
@@ -130,6 +147,9 @@ level_t *level_generate(arena_t *scratch, u32 seed) {
     l->h = 32;
     l->tile_size = 2.0f;
     str_copy(l->fill, sizeof l->fill, "ground");
+
+    add_use(l, "assets/defs/resources.def");
+    defs_load_file(defs, scratch, "assets/defs/resources.def");
 
     add_asset(l, "atlas", KAYKIT_DIR "citybits_texture.png", ASSET_TEXTURE, true); // City kit: flip
     add_asset(l, "m_ground", KAYKIT_DIR "base.gltf", ASSET_MESH, false);
@@ -193,90 +213,81 @@ level_t *level_generate(arena_t *scratch, u32 seed) {
     return l;
 }
 
-static char *trim(char *s) {
-    while (*s == ' ' || *s == '\t' || *s == '"' || *s == '\r')
-        ++s;
-    u64 n = strlen(s);
-    while (n > 0 && (s[n - 1] == ' ' || s[n - 1] == '\t' || s[n - 1] == '"' || s[n - 1] == '\r'))
-        s[--n] = '\0';
-    return s;
-}
-
-// Whitespace-delimited tokenizer over one line; null-terminates each token in place and advances
-// *cursor past it. Returns NULL when the line is exhausted.
-static char *next_token(char **cursor) {
-    char *s = *cursor;
-    while (*s == ' ' || *s == '\t' || *s == '\r')
-        ++s;
-    if (*s == '\0') {
-        *cursor = s;
-        return NULL;
-    }
-    char *start = s;
-    while (*s && *s != ' ' && *s != '\t' && *s != '\r')
-        ++s;
-    if (*s)
-        *s++ = '\0';
-    *cursor = s;
-    return start;
-}
-
-static void parse_line(level_t *l, char *line) {
+static void parse_line(level_t *l, defs_t *defs, arena_t *scratch, char *line) {
     char *hash = strchr(line, '#');
     if (hash)
         *hash = '\0';
 
     char *cur = line;
-    char *tok = next_token(&cur);
+    char *tok = text_next_token(&cur);
     if (!tok)
         return;
 
     if (strcmp(tok, "level") == 0) {
-        char *rest = trim(cur); // remainder of the line is the (possibly quoted) name
+        char *rest = text_trim(cur); // remainder of the line is the (possibly quoted) name
         if (*rest)
             str_copy(l->name, sizeof l->name, rest);
     } else if (strcmp(tok, "grid") == 0) {
-        char *a = next_token(&cur), *b = next_token(&cur), *c = next_token(&cur);
+        char *a = text_next_token(&cur), *b = text_next_token(&cur), *c = text_next_token(&cur);
         if (a)
             l->w = atoi(a);
         if (b)
             l->h = atoi(b);
         if (c)
             l->tile_size = (f32)atof(c);
+    } else if (strcmp(tok, "use") == 0) {
+        char *p = text_next_token(&cur);
+        if (p) {
+            add_use(l, p);
+            defs_load_file(defs, scratch, p);
+        } else {
+            LOG_WARN("level: malformed use line");
+        }
     } else if (strcmp(tok, "texture") == 0 || strcmp(tok, "mesh") == 0) {
         asset_kind_t kind = tok[0] == 't' ? ASSET_TEXTURE : ASSET_MESH;
-        char *name = next_token(&cur), *path = next_token(&cur), *fl = next_token(&cur);
+        char *name = text_next_token(&cur), *path = text_next_token(&cur),
+             *fl = text_next_token(&cur);
         if (name && path)
             add_asset(l, name, path, kind, kind == ASSET_TEXTURE && fl && atoi(fl) != 0);
         else
             LOG_WARN("level: malformed asset line");
     } else if (strcmp(tok, "object") == 0) {
-        char *id = next_token(&cur), *ks = next_token(&cur);
-        char *mesh = next_token(&cur), *tex = next_token(&cur), *sc = next_token(&cur);
+        char *id = text_next_token(&cur), *ks = text_next_token(&cur);
+        char *mesh = text_next_token(&cur), *tex = text_next_token(&cur),
+             *sc = text_next_token(&cur);
         object_kind_t kind;
         if (id && ks && mesh && tex && obj_kind_parse(ks, &kind))
             add_object(l, id, kind, mesh, tex, sc ? (f32)atof(sc) : 1.0f);
         else
             LOG_WARN("level: malformed object line");
     } else if (strcmp(tok, "fill") == 0) {
-        char *id = next_token(&cur);
+        char *id = text_next_token(&cur);
         if (id)
             str_copy(l->fill, sizeof l->fill, id);
     } else if (strcmp(tok, "city") == 0) {
-        char *a = next_token(&cur), *b = next_token(&cur), *c = next_token(&cur);
+        char *a = text_next_token(&cur), *b = text_next_token(&cur), *c = text_next_token(&cur);
         if (a && b && c)
             add_city(l, atoi(a), atoi(b), (u32)atoi(c));
         else
             LOG_WARN("level: malformed city line");
+    } else if (strcmp(tok, "site") == 0) {
+        char *a = text_next_token(&cur), *b = text_next_token(&cur);
+        char *res = text_next_token(&cur), *obj = text_next_token(&cur);
+        char *cap = text_next_token(&cur), *rep = text_next_token(&cur);
+        if (a && b && res && obj)
+            add_site(l, atoi(a), atoi(b), res, obj, cap ? (f32)atof(cap) : 0.0f,
+                     rep ? (f32)atof(rep) : 0.0f);
+        else
+            LOG_WARN("level: malformed site line");
     } else if (strcmp(tok, "tile") == 0) {
-        char *a = next_token(&cur), *b = next_token(&cur);
-        char *id = next_token(&cur), *r = next_token(&cur);
+        char *a = text_next_token(&cur), *b = text_next_token(&cur);
+        char *id = text_next_token(&cur), *r = text_next_token(&cur);
         if (a && b && id)
             add_override(l, atoi(a), atoi(b), id, r ? (u8)atoi(r) : 0);
         else
             LOG_WARN("level: malformed tile line");
     } else if (strcmp(tok, "water") == 0) {
-        char *a = next_token(&cur), *b = next_token(&cur);
+        char *a = text_next_token(&cur), *b = text_next_token(&cur);
         if (a && b)
             add_water(l, atoi(a), atoi(b));
         else
@@ -288,7 +299,7 @@ static void parse_line(level_t *l, char *line) {
     }
 }
 
-level_t *level_load(arena_t *scratch, const char *path) {
+level_t *level_load(arena_t *scratch, defs_t *defs, const char *path) {
     file_data_t fd = file_read(scratch, path);
     if (!fd.data)
         return NULL;
@@ -306,7 +317,7 @@ level_t *level_load(arena_t *scratch, const char *path) {
             ++eol;
         char saved = *eol;
         *eol = '\0';
-        parse_line(l, cur);
+        parse_line(l, defs, scratch, cur);
         if (saved == '\0')
             break;
         cur = eol + 1;
@@ -325,6 +336,11 @@ b32 level_save(const level_t *l, const char *path) {
     fprintf(f, "# tradingstuff level\n");
     fprintf(f, "level \"%s\"\n", l->name);
     fprintf(f, "grid %d %d %g\n\n", l->w, l->h, (double)l->tile_size);
+
+    for (u32 i = 0; i < l->use_count; ++i)
+        fprintf(f, "use %s\n", l->uses[i]);
+    if (l->use_count)
+        fprintf(f, "\n");
 
     for (u32 i = 0; i < l->asset_count; ++i) {
         const asset_decl_t *a = &l->assets[i];
@@ -348,6 +364,13 @@ b32 level_save(const level_t *l, const char *path) {
 
     for (u32 i = 0; i < l->water_count; ++i)
         fprintf(f, "water %d %d\n", l->water[i].x, l->water[i].z);
+    fprintf(f, "\n");
+
+    for (u32 i = 0; i < l->site_count; ++i) {
+        const level_site_t *s = &l->sites[i];
+        fprintf(f, "site %d %d %s %s %g %g\n", s->x, s->z, s->resource, s->object,
+                (double)s->capacity, (double)s->replenish);
+    }
     fprintf(f, "\n");
 
     for (u32 i = 0; i < l->override_count; ++i) {

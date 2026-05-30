@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "../core/mem.h"
+#include "defs.h"
 
 #define LEVEL_ID_LEN 32
 #define LEVEL_PATH_LEN 256
@@ -11,6 +12,8 @@
 #define LEVEL_MAX_OVERRIDES 8192
 #define LEVEL_MAX_WATER 8192
 #define LEVEL_MAX_CITIES 64
+#define LEVEL_MAX_USES 16
+#define LEVEL_MAX_SITES 256
 
 typedef enum {
     ASSET_MESH,
@@ -64,6 +67,15 @@ typedef struct {
     u32 radius;
 } level_city_t;
 
+// A placed RAW resource site: position, the resource def it yields, and the prototype that draws it.
+// capacity/replenish of 0 mean "use the resource def's default".
+typedef struct {
+    i32 x, z;
+    char resource[LEVEL_ID_LEN]; // resource def id
+    char object[LEVEL_ID_LEN];   // visual prototype id
+    f32 capacity, replenish;
+} level_site_t;
+
 // The serializable source form of a world: the generator and the file loader both produce this,
 // and world_from_level (world.h) compiles it into a runtime world_t.
 typedef struct {
@@ -87,11 +99,18 @@ typedef struct {
 
     level_city_t cities[LEVEL_MAX_CITIES];
     u32 city_count;
+
+    char uses[LEVEL_MAX_USES][LEVEL_PATH_LEN]; // def files this level references
+    u32 use_count;
+
+    level_site_t sites[LEVEL_MAX_SITES];
+    u32 site_count;
 } level_t;
 
 // All allocate the returned level_t in `scratch`; load returns NULL if the file is missing.
-level_t *level_generate(arena_t *scratch, u32 seed);
-level_t *level_load(arena_t *scratch, const char *path);
+// `defs` is filled from the level's `use` directives (load) or directly (generate).
+level_t *level_generate(arena_t *scratch, defs_t *defs, u32 seed);
+level_t *level_load(arena_t *scratch, defs_t *defs, const char *path);
 b32 level_save(const level_t *level, const char *path);
 
 const object_def_t *level_find_object(const level_t *level, const char *id);

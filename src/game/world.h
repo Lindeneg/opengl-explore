@@ -38,6 +38,13 @@ typedef struct {
     u32 radius;
 } city_t;
 
+// A RAW resource site: a cell that yields a resource. Static for now (stock not yet simulated).
+typedef struct {
+    i32 cx, cz;
+    u16 resource; // index into world.defs->resources
+    f32 capacity, replenish, stock;
+} site_t;
+
 typedef struct {
     i32 w, h;
     f32 tile_size;
@@ -46,6 +53,9 @@ typedef struct {
     u8 *paths;     // w * h, PATH_* bitmask; 0 = no path
     city_t *cities;
     u32 city_count;
+    site_t *sites;
+    u32 site_count;
+    const defs_t *defs; // resource (and later industry/city) rulebook this world was built from
 
     mesh_handle ground;      // terrain ground mesh (from the `fill` prototype)
     texture_handle ground_tex;
@@ -54,9 +64,9 @@ typedef struct {
 } world_t;
 
 // Compiles a level into a runtime world: loads the level's declared assets into `assets`, fills the
-// grid, applies tile overrides, and resolves the well-known road/ground prototypes.
-world_t world_from_level(const level_t *level, assets_t *assets, arena_t *permanent,
-                         arena_t *scratch);
+// grid, applies tile overrides, resolves road/ground prototypes, and builds resource-site entities.
+world_t world_from_level(const level_t *level, const defs_t *defs, assets_t *assets,
+                         arena_t *permanent, arena_t *scratch);
 vec3_t world_cell_world(const world_t *world, i32 x, i32 z);
 b32 world_world_to_cell(const world_t *world, vec3_t p, i32 *cx, i32 *cz);
 void world_draw(const world_t *world, assets_t *assets, renderer_t *r);
