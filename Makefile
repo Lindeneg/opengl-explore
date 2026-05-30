@@ -1,3 +1,5 @@
+.PHONY: generate build run format
+
 generate:
 	cmake --preset default
 
