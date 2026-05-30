@@ -97,7 +97,7 @@ int main(void) {
 
         mat4_t view_proj = mat4_mul(camera_proj(&cam, aspect), camera_view(&cam));
 
-        renderer_begin(&r, fb_w, fb_h, &view_proj, assets_texture_gl(&assets, world.atlas));
+        renderer_begin(&r, fb_w, fb_h, &view_proj);
         world_draw(&world, &assets, &r);
         world_draw_paths(&world, &assets, &r);
         build_tool_draw(&tool, &world, &assets, &r);

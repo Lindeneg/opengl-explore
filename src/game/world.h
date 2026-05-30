@@ -9,8 +9,9 @@
 #include "level.h"
 
 typedef struct {
-    mesh_handle mesh; // ASSET_INVALID = empty
-    u8 rot;           // quarter turns, 0..3
+    mesh_handle mesh;   // ASSET_INVALID = empty
+    texture_handle tex; // atlas this tile's mesh samples
+    u8 rot;             // quarter turns, 0..3
 } tile_t;
 
 // Per-cell path bits. Low 4 = neighbour connectivity (N=-z, E=+x, S=+z, W=-x),
@@ -37,9 +38,9 @@ typedef struct {
     city_t *cities;
     u32 city_count;
 
-    texture_handle atlas; // the texture renderer_begin binds for this world
     mesh_handle ground;
     mesh_handle road_straight, road_corner, road_tsplit, road_junction;
+    texture_handle road_tex; // atlas shared by the road meshes
 } world_t;
 
 // Compiles a level into a runtime world: loads the level's declared assets into `assets`, fills the

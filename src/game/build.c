@@ -87,6 +87,9 @@ void build_tool_update(build_tool_t *t, world_t *w, b32 hover, i32 hx, i32 hz) {
 }
 
 void build_tool_draw(const build_tool_t *t, const world_t *w, assets_t *assets, renderer_t *r) {
+    if (w->road_tex == ASSET_INVALID)
+        return; // no road atlas in this level -> nothing to preview
+
     cell_t run[BUILD_RUN_MAX];
     i32 n;
     if (t->active && !t->erase)
@@ -116,6 +119,6 @@ void build_tool_draw(const build_tool_t *t, const world_t *w, assets_t *assets, 
         vec3_t pos = world_cell_world(w, x, z);
         mat4_t model = mat4_mul(mat4_translate(pos),
                                 mat4_rotate(vec3(0.0f, 1.0f, 0.0f), (f32)rot * (PI * 0.5f)));
-        renderer_draw(r, assets_mesh(assets, mesh), &model);
+        renderer_draw(r, assets_mesh(assets, mesh), &model, assets_texture_gl(assets, w->road_tex));
     }
 }

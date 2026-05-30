@@ -1,19 +1,33 @@
-# tradingstuff level — hand-authored starter (proves the format is human-writable)
+# tradingstuff level — hand-authored starter
+# Doubles as the multi-atlas demo: City + Forest + ResourceBits meshes, each with its own texture.
 level "Starter"
 grid 16 16 2.0
 
-# dependencies: <kind> <name> <path>  (paths are repo-root relative, forward slashes)
-texture atlas         assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png
-mesh    m_ground      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
-mesh    m_bldg_a      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_A.gltf
-mesh    m_bldg_b      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_B.gltf
-mesh    m_bldg_c      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_C.gltf
+# dependencies: <kind> <name> <path>  (paths repo-root relative, forward slashes)
+# --- City kit (citybits atlas) ---
+texture atlas           assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png
+mesh    m_ground        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
+mesh    m_bldg_a        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_A.gltf
+mesh    m_bldg_b        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_B.gltf
+mesh    m_bldg_c        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_C.gltf
 mesh    m_road_straight assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_straight.gltf
 mesh    m_road_corner   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_corner.gltf
 mesh    m_road_tsplit   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_tsplit.gltf
 mesh    m_road_junction assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_junction.gltf
+# --- Forest kit (forest atlas) ---
+texture forest_atlas    assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/forest_texture.png
+mesh    m_tree_1        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/Tree_1_A_Color1.gltf
+mesh    m_tree_2        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/Tree_2_A_Color1.gltf
+# --- ResourceBits kit (resource_bits atlas) ---
+texture resource_atlas  assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/resource_bits_texture.png
+mesh    m_iron          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Iron_Nugget_Large.gltf
+mesh    m_gold          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Gold_Nugget_Large.gltf
+mesh    m_stone         assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Stone_Brick.gltf
 
 # prototypes: object <id> <kind: ground|building|road> <mesh> <texture>
+# NB: trees/resources are kind=building here as placeholders — proper resource/nature kinds
+# (and on-ground prop layering) come in the structure+metadata slice. For now they REPLACE the
+# ground cell, so expect a gap under each. This level only exists to prove multi-atlas rendering.
 object ground         ground   m_ground         atlas
 object bldg_a         building m_bldg_a         atlas
 object bldg_b         building m_bldg_b         atlas
@@ -22,6 +36,11 @@ object road_straight  road     m_road_straight  atlas
 object road_corner    road     m_road_corner    atlas
 object road_tsplit    road     m_road_tsplit    atlas
 object road_junction  road     m_road_junction  atlas
+object tree_1         building m_tree_1         forest_atlas
+object tree_2         building m_tree_2         forest_atlas
+object res_iron       building m_iron           resource_atlas
+object res_gold       building m_gold           resource_atlas
+object res_stone      building m_stone          resource_atlas
 
 fill ground
 
@@ -29,7 +48,7 @@ fill ground
 city 4 4 1
 city 11 10 1
 
-# tile <x> <z> <object> [rot]
+# city buildings (citybits atlas)
 tile 3 3 bldg_a 0
 tile 4 3 bldg_b 1
 tile 3 4 bldg_c 2
@@ -40,3 +59,15 @@ tile 11 9  bldg_a 1
 tile 12 10 bldg_b 2
 tile 10 11 bldg_a 0
 tile 11 11 bldg_c 3
+
+# a grove (forest atlas)
+tile 7 2 tree_1 0
+tile 8 2 tree_2 1
+tile 7 3 tree_2 2
+tile 8 3 tree_1 3
+tile 9 2 tree_1 0
+
+# resource piles (resource_bits atlas)
+tile 2 12 res_iron 0
+tile 3 12 res_gold 0
+tile 2 13 res_stone 0

@@ -48,23 +48,19 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
     w.h = lvl->h;
     w.tile_size = lvl->tile_size;
     w.ground = object_mesh(lvl, &ra, lvl->fill);
-    w.atlas = object_tex(lvl, &ra, lvl->fill);
+    texture_handle ground_tex = object_tex(lvl, &ra, lvl->fill);
     w.road_straight = object_mesh(lvl, &ra, "road_straight");
     w.road_corner = object_mesh(lvl, &ra, "road_corner");
     w.road_tsplit = object_mesh(lvl, &ra, "road_tsplit");
     w.road_junction = object_mesh(lvl, &ra, "road_junction");
-    if (w.atlas == ASSET_INVALID) // fall back to the first declared texture
-        for (u32 i = 0; i < lvl->asset_count; ++i)
-            if (lvl->assets[i].kind == ASSET_TEXTURE) {
-                w.atlas = ra.tex[i];
-                break;
-            }
+    w.road_tex = object_tex(lvl, &ra, "road_straight");
 
     u64 cells = (u64)w.w * (u64)w.h;
     w.tiles = push_array(permanent, tile_t, cells);
     w.paths = push_array_z(permanent, u8, cells);
     for (u64 i = 0; i < cells; ++i) {
         w.tiles[i].mesh = w.ground;
+        w.tiles[i].tex = ground_tex;
         w.tiles[i].rot = 0;
     }
 
@@ -74,6 +70,7 @@ world_t world_from_level(const level_t *lvl, assets_t *assets, arena_t *permanen
             continue;
         tile_t *cell = &w.tiles[t->z * w.w + t->x];
         cell->mesh = object_mesh(lvl, &ra, t->object);
+        cell->tex = object_tex(lvl, &ra, t->object);
         cell->rot = t->rot;
     }
 
@@ -102,12 +99,14 @@ b32 world_world_to_cell(const world_t *w, vec3_t p, i32 *cx, i32 *cz) {
     return true;
 }
 
-static void draw_cell(const world_t *w, assets_t *assets, renderer_t *r, mesh_handle mesh, u8 rot,
-                      i32 x, i32 z) {
+static void draw_cell(const world_t *w, assets_t *assets, renderer_t *r, mesh_handle mesh,
+                      texture_handle tex, u8 rot, i32 x, i32 z) {
+    if (mesh == ASSET_INVALID || tex == ASSET_INVALID)
+        return;
     vec3_t pos = world_cell_world(w, x, z);
     mat4_t model =
         mat4_mul(mat4_translate(pos), mat4_rotate(vec3(0.0f, 1.0f, 0.0f), (f32)rot * (PI * 0.5f)));
-    renderer_draw(r, assets_mesh(assets, mesh), &model);
+    renderer_draw(r, assets_mesh(assets, mesh), &model, assets_texture_gl(assets, tex));
 }
 
 void world_draw(const world_t *w, assets_t *assets, renderer_t *r) {
@@ -119,7 +118,7 @@ void world_draw(const world_t *w, assets_t *assets, renderer_t *r) {
                 continue;
             if (w->paths[i] & PATH_PRESENT)
                 continue; // a road tile replaces the ground here (drawn in world_draw_paths)
-            draw_cell(w, assets, r, t.mesh, t.rot, x, z);
+            draw_cell(w, assets, r, t.mesh, t.tex, t.rot, x, z);
         }
     }
 }
@@ -133,7 +132,7 @@ void world_draw_paths(const world_t *w, assets_t *assets, renderer_t *r) {
             mesh_handle mesh;
             u8 rot;
             world_path_mesh(w, p, &mesh, &rot);
-            draw_cell(w, assets, r, mesh, rot, x, z);
+            draw_cell(w, assets, r, mesh, w->road_tex, rot, x, z);
         }
     }
 }

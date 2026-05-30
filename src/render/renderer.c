@@ -14,7 +14,7 @@ void renderer_init(renderer_t *r, arena_t *scratch) {
     glEnable(GL_DEPTH_TEST);
 }
 
-void renderer_begin(renderer_t *r, i32 fb_w, i32 fb_h, const mat4_t *view_proj, u32 texture) {
+void renderer_begin(renderer_t *r, i32 fb_w, i32 fb_h, const mat4_t *view_proj) {
     r->view_proj = *view_proj;
 
     glViewport(0, 0, fb_w, fb_h);
@@ -23,11 +23,15 @@ void renderer_begin(renderer_t *r, i32 fb_w, i32 fb_h, const mat4_t *view_proj, 
 
     glUseProgram(r->program);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(r->u_tex, 0);
+    r->bound_texture = 0; // force a bind on the first draw of the frame
 }
 
-void renderer_draw(renderer_t *r, const mesh_t *mesh, const mat4_t *model) {
+void renderer_draw(renderer_t *r, const mesh_t *mesh, const mat4_t *model, u32 texture) {
+    if (texture != r->bound_texture) {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        r->bound_texture = texture;
+    }
     mat4_t mvp = mat4_mul(r->view_proj, *model);
     glUniformMatrix4fv(r->u_mvp, 1, GL_FALSE, mvp.e);
     glBindVertexArray(mesh->vao);
