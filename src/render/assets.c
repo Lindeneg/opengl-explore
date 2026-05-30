@@ -28,14 +28,14 @@ mesh_handle assets_load_mesh(assets_t *a, arena_t *scratch, const char *path) {
     return h;
 }
 
-texture_handle assets_load_texture(assets_t *a, arena_t *scratch, const char *path) {
+texture_handle assets_load_texture(assets_t *a, arena_t *scratch, const char *path, b32 flip) {
     for (u32 i = 0; i < a->texture_count; ++i)
         if (strcmp(a->texture_paths[i], path) == 0)
             return i;
 
     ASSERT_MSG(a->texture_count < ASSETS_MAX_TEXTURES, "assets: texture capacity exceeded");
     u32 h = a->texture_count++;
-    a->textures[h] = texture_load(scratch, path);
+    a->textures[h] = texture_load(scratch, path, flip);
     a->texture_paths[h] = arena_strdup(a->permanent, path);
     return h;
 }

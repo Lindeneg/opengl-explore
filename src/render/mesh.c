@@ -108,8 +108,8 @@ mesh_t mesh_make_quad(f32 size) {
     f32 h = size * 0.5f;
     // pos.xyz, uv.xy — flat on the XZ plane, facing +Y (uv unused by the colour shader)
     f32 verts[] = {
-        -h, 0.0f, -h, 0.0f, 0.0f, h, 0.0f, -h, 1.0f, 0.0f,
-        h,  0.0f, h,  1.0f, 1.0f, -h, 0.0f, h, 0.0f, 1.0f,
+        -h, 0.0f, -h, 0.0f, 0.0f, h,  0.0f, -h, 1.0f, 0.0f,
+        h,  0.0f, h,  1.0f, 1.0f, -h, 0.0f, h,  0.0f, 1.0f,
     };
     u32 indices[] = {0, 1, 2, 0, 2, 3};
 

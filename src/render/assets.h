@@ -28,7 +28,7 @@ typedef struct {
 void assets_init(assets_t *a, arena_t *permanent);
 
 mesh_handle assets_load_mesh(assets_t *a, arena_t *scratch, const char *path);
-texture_handle assets_load_texture(assets_t *a, arena_t *scratch, const char *path);
+texture_handle assets_load_texture(assets_t *a, arena_t *scratch, const char *path, b32 flip);
 
 mesh_t *assets_mesh(assets_t *a, mesh_handle h);
 u32 assets_texture_gl(assets_t *a, texture_handle h);

@@ -22,6 +22,7 @@ typedef struct {
     char name[LEVEL_ID_LEN];
     char path[LEVEL_PATH_LEN];
     asset_kind_t kind;
+    b32 flip; // textures only: flip rows on load (KayKit packs disagree on UV origin)
 } asset_decl_t;
 
 typedef enum {

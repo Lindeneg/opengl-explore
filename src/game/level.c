@@ -79,12 +79,13 @@ const object_def_t *level_find_object(const level_t *l, const char *id) {
     return NULL;
 }
 
-static void add_asset(level_t *l, const char *name, const char *path, asset_kind_t kind) {
+static void add_asset(level_t *l, const char *name, const char *path, asset_kind_t kind, b32 flip) {
     ASSERT_RET_V_MSG(l->asset_count < LEVEL_MAX_ASSETS, "level: too many assets");
     asset_decl_t *a = &l->assets[l->asset_count++];
     str_copy(a->name, sizeof a->name, name);
     str_copy(a->path, sizeof a->path, path);
     a->kind = kind;
+    a->flip = flip;
 }
 
 static void add_object(level_t *l, const char *id, object_kind_t kind, const char *mesh,
@@ -130,8 +131,8 @@ level_t *level_generate(arena_t *scratch, u32 seed) {
     l->tile_size = 2.0f;
     str_copy(l->fill, sizeof l->fill, "ground");
 
-    add_asset(l, "atlas", KAYKIT_DIR "citybits_texture.png", ASSET_TEXTURE);
-    add_asset(l, "m_ground", KAYKIT_DIR "base.gltf", ASSET_MESH);
+    add_asset(l, "atlas", KAYKIT_DIR "citybits_texture.png", ASSET_TEXTURE, true); // City kit: flip
+    add_asset(l, "m_ground", KAYKIT_DIR "base.gltf", ASSET_MESH, false);
     add_object(l, "ground", OBJ_GROUND, "m_ground", "atlas", 1.0f);
 
     // Road prototypes use the well-known ids world_from_level looks up for the auto-tiler.
@@ -142,7 +143,7 @@ level_t *level_generate(arena_t *scratch, u32 seed) {
         char asset[LEVEL_ID_LEN], path[LEVEL_PATH_LEN];
         snprintf(asset, sizeof asset, "m_%s", road_ids[i]);
         snprintf(path, sizeof path, "%s%s", KAYKIT_DIR, road_files[i]);
-        add_asset(l, asset, path, ASSET_MESH);
+        add_asset(l, asset, path, ASSET_MESH, false);
         add_object(l, road_ids[i], OBJ_ROAD, asset, "atlas", 1.0f);
     }
 
@@ -151,7 +152,7 @@ level_t *level_generate(arena_t *scratch, u32 seed) {
         snprintf(id, sizeof id, "bldg_%c", 'a' + i);
         snprintf(asset, sizeof asset, "m_bldg_%c", 'a' + i);
         snprintf(path, sizeof path, "%sbuilding_%c.gltf", KAYKIT_DIR, 'A' + i);
-        add_asset(l, asset, path, ASSET_MESH);
+        add_asset(l, asset, path, ASSET_MESH, false);
         add_object(l, id, OBJ_BUILDING, asset, "atlas", 1.0f);
     }
 
@@ -244,9 +245,9 @@ static void parse_line(level_t *l, char *line) {
             l->tile_size = (f32)atof(c);
     } else if (strcmp(tok, "texture") == 0 || strcmp(tok, "mesh") == 0) {
         asset_kind_t kind = tok[0] == 't' ? ASSET_TEXTURE : ASSET_MESH;
-        char *name = next_token(&cur), *path = next_token(&cur);
+        char *name = next_token(&cur), *path = next_token(&cur), *fl = next_token(&cur);
         if (name && path)
-            add_asset(l, name, path, kind);
+            add_asset(l, name, path, kind, kind == ASSET_TEXTURE && fl && atoi(fl) != 0);
         else
             LOG_WARN("level: malformed asset line");
     } else if (strcmp(tok, "object") == 0) {
@@ -325,9 +326,13 @@ b32 level_save(const level_t *l, const char *path) {
     fprintf(f, "level \"%s\"\n", l->name);
     fprintf(f, "grid %d %d %g\n\n", l->w, l->h, (double)l->tile_size);
 
-    for (u32 i = 0; i < l->asset_count; ++i)
-        fprintf(f, "%s %s %s\n", asset_kind_str(l->assets[i].kind), l->assets[i].name,
-                l->assets[i].path);
+    for (u32 i = 0; i < l->asset_count; ++i) {
+        const asset_decl_t *a = &l->assets[i];
+        if (a->kind == ASSET_TEXTURE)
+            fprintf(f, "%s %s %s %d\n", asset_kind_str(a->kind), a->name, a->path, a->flip ? 1 : 0);
+        else
+            fprintf(f, "%s %s %s\n", asset_kind_str(a->kind), a->name, a->path);
+    }
     fprintf(f, "\n");
 
     for (u32 i = 0; i < l->object_count; ++i) {

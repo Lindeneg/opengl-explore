@@ -4,8 +4,8 @@
 level "Starter"
 grid 24 24 2.0
 
-# --- City kit (citybits atlas) ---
-texture atlas           assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png
+# --- City kit (citybits atlas; flip=1 — this pack authors UVs bottom-left) ---
+texture atlas           assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png 1
 mesh    m_ground        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
 mesh    m_bldg_a        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_A.gltf
 mesh    m_bldg_b        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_B.gltf
@@ -21,9 +21,9 @@ mesh    m_tree_1        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_
 mesh    m_tree_2        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/Tree_2_A_Color1.gltf
 # --- ResourceBits kit (resource_bits atlas) ---
 texture resource_atlas  assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/resource_bits_texture.png
-mesh    m_iron          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Iron_Bars_Stack_Large.gltf
-mesh    m_stone         assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Stone_Bricks_Stack_Large.gltf
-mesh    m_gold          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Gold_Bars_Stack_Large.gltf
+mesh    m_iron          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Iron_Nuggets.gltf
+mesh    m_stone         assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Stone_Chunks_Large.gltf
+mesh    m_gold          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Gold_Nuggets.gltf
 
 # prototypes: object <id> <kind> <mesh> <texture> [scale]
 # kinds: ground | building | road | industry | nature | resource
@@ -39,9 +39,9 @@ object road_tsplit    road     m_road_tsplit    atlas
 object road_junction  road     m_road_junction  atlas
 object tree_1         nature   m_tree_1         forest_atlas
 object tree_2         nature   m_tree_2         forest_atlas
-object res_iron       resource m_iron           resource_atlas  4
-object res_stone      resource m_stone          resource_atlas  4
-object res_gold       resource m_gold           resource_atlas  4
+object res_iron       resource m_iron           resource_atlas  2
+object res_stone      resource m_stone          resource_atlas  2
+object res_gold       resource m_gold           resource_atlas  2
 
 fill ground
 

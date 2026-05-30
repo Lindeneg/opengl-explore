@@ -7,7 +7,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-u32 texture_load(arena_t *scratch, const char *path) {
+u32 texture_load(arena_t *scratch, const char *path, b32 flip) {
     temp_t t = temp_begin(scratch);
     file_data_t f = file_read(scratch, path);
     if (!f.data) {
@@ -15,7 +15,7 @@ u32 texture_load(arena_t *scratch, const char *path) {
         return 0;
     }
 
-    stbi_set_flip_vertically_on_load(1); // GL's UV origin is bottom-left
+    stbi_set_flip_vertically_on_load(flip ? 1 : 0);
     int w, h, channels;
     stbi_uc *pixels = stbi_load_from_memory(f.data, (int)f.size, &w, &h, &channels, 4);
     temp_end(t);
