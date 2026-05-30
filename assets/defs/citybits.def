@@ -1,0 +1,30 @@
+# KayKit City Builder Bits — assets + object prototypes (see assets/city-assets/License.txt)
+texture atlas           assets/city-assets/gltf/citybits_texture.png 1
+mesh    m_ground        assets/city-assets/gltf/base.gltf
+mesh    m_bldg_a        assets/city-assets/gltf/building_A.gltf
+mesh    m_bldg_b        assets/city-assets/gltf/building_B.gltf
+mesh    m_bldg_c        assets/city-assets/gltf/building_C.gltf
+mesh    m_bldg_d        assets/city-assets/gltf/building_D.gltf
+mesh    m_bldg_e        assets/city-assets/gltf/building_E.gltf
+mesh    m_bldg_f        assets/city-assets/gltf/building_F.gltf
+mesh    m_bldg_g        assets/city-assets/gltf/building_G.gltf
+mesh    m_bldg_h        assets/city-assets/gltf/building_H.gltf
+mesh    m_road_straight assets/city-assets/gltf/road_straight.gltf
+mesh    m_road_corner   assets/city-assets/gltf/road_corner.gltf
+mesh    m_road_tsplit   assets/city-assets/gltf/road_tsplit.gltf
+mesh    m_road_junction assets/city-assets/gltf/road_junction.gltf
+
+object ground         ground   m_ground         atlas
+object bldg_a         building m_bldg_a         atlas
+object bldg_b         building m_bldg_b         atlas
+object bldg_c         building m_bldg_c         atlas
+object bldg_d         building m_bldg_d         atlas
+object bldg_e         building m_bldg_e         atlas
+object bldg_f         building m_bldg_f         atlas
+object bldg_g         building m_bldg_g         atlas
+object bldg_h         building m_bldg_h         atlas
+object industry       industry m_bldg_h         atlas
+object road_straight  road     m_road_straight  atlas
+object road_corner    road     m_road_corner    atlas
+object road_tsplit    road     m_road_tsplit    atlas
+object road_junction  road     m_road_junction  atlas

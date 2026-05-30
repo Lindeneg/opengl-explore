@@ -1,52 +1,15 @@
 # tradingstuff level — hand-authored starter
-# Shows the representation: ground + water terrain, two towns (one with an industry),
-# a forest grove, and resource sites. Three atlases (City / Forest / ResourceBits) in one frame.
 level "Starter"
 grid 24 24 2.0
 
-# reusable rulebook (resource definitions)
 use assets/defs/resources.def
-
-# --- City kit (citybits atlas; flip=1 — this pack authors UVs bottom-left) ---
-texture atlas           assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png 1
-mesh    m_ground        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/base.gltf
-mesh    m_bldg_a        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_A.gltf
-mesh    m_bldg_b        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_B.gltf
-mesh    m_bldg_c        assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_C.gltf
-mesh    m_industry      assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/building_H.gltf
-mesh    m_road_straight assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_straight.gltf
-mesh    m_road_corner   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_corner.gltf
-mesh    m_road_tsplit   assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_tsplit.gltf
-mesh    m_road_junction assets/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/road_junction.gltf
-# --- Forest kit (forest atlas) ---
-texture forest_atlas    assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/forest_texture.png
-mesh    m_tree_1        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/Tree_1_A_Color1.gltf
-mesh    m_tree_2        assets/KayKit_Forest_Nature_Pack_1.0_FREE/KayKit_Forest_Nature_Pack_1.0_FREE/Assets/gltf/Tree_2_A_Color1.gltf
-# --- ResourceBits kit (resource_bits atlas) ---
-texture resource_atlas  assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/resource_bits_texture.png
-mesh    m_iron          assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Iron_Nuggets.gltf
-mesh    m_stone         assets/KayKit_ResourceBits_1.0_FREE/KayKit_ResourceBits_1.0_FREE/Assets/gltf/Stone_Chunks_Large.gltf
-
-# prototypes: object <id> <kind> <mesh> <texture> [scale]
-# kinds: ground | building | road | industry | nature | resource
-#   building/industry/road carry their own base (replace the ground); nature/resource sit on it.
-object ground         ground   m_ground         atlas
-object bldg_a         building m_bldg_a         atlas
-object bldg_b         building m_bldg_b         atlas
-object bldg_c         building m_bldg_c         atlas
-object industry       industry m_industry       atlas
-object road_straight  road     m_road_straight  atlas
-object road_corner    road     m_road_corner    atlas
-object road_tsplit    road     m_road_tsplit    atlas
-object road_junction  road     m_road_junction  atlas
-object tree_1         nature   m_tree_1         forest_atlas
-object tree_2         nature   m_tree_2         forest_atlas
-object res_iron       resource m_iron           resource_atlas  2
-object res_stone      resource m_stone          resource_atlas  2
+use assets/defs/citybits.def
+use assets/defs/forest.def
+use assets/defs/resourcebits.def
 
 fill ground
 
-# --- a lake (water terrain) ---
+# lake (water terrain)
 water 15 3
 water 16 3
 water 17 3
@@ -65,11 +28,10 @@ water 16 6
 water 17 6
 water 18 6
 
-# --- city nodes ---
 city 5 6 2
 city 17 18 2
 
-# town 1 (buildings + an industry at the centre)
+# town 1 (+ industry at the centre)
 tile 4 5 bldg_a 0
 tile 5 5 bldg_b 0
 tile 6 5 bldg_c 1
@@ -87,7 +49,7 @@ tile 18 18 bldg_a 0
 tile 17 19 bldg_b 0
 tile 17 18 industry 1
 
-# forest grove (nature, on ground)
+# forest grove
 tile 8 14 tree_1 0
 tile 9 14 tree_2 1
 tile 10 15 tree_1 2
@@ -96,8 +58,7 @@ tile 9 16 tree_1 3
 tile 11 15 tree_2 0
 tile 10 17 tree_1 1
 
-# resource sites — site <x> <z> <resource> <object> [capacity] [replenish]
-# (capacity/replenish default from resources.def; visual prototype drawn on the ground)
+# resource sites — site <x> <z> <resource> <object>
 site 3 18 ore  res_iron
 site 4 18 ore  res_iron
 site 20 11 coal res_stone

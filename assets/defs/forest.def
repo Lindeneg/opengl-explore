@@ -1,0 +1,7 @@
+# KayKit Forest Nature Pack — tree props (see assets/forest-assets/License.txt)
+texture forest_atlas assets/forest-assets/gltf/forest_texture.png
+mesh    m_tree_1     assets/forest-assets/gltf/Tree_1_A_Color1.gltf
+mesh    m_tree_2     assets/forest-assets/gltf/Tree_2_A_Color1.gltf
+
+object tree_1 nature m_tree_1 forest_atlas
+object tree_2 nature m_tree_2 forest_atlas

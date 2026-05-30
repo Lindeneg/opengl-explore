@@ -1,0 +1,7 @@
+# KayKit ResourceBits — resource site props (see assets/resource-assets/License.txt)
+texture resource_atlas assets/resource-assets/gltf/resource_bits_texture.png
+mesh    m_iron         assets/resource-assets/gltf/Iron_Nuggets.gltf
+mesh    m_stone        assets/resource-assets/gltf/Stone_Chunks_Large.gltf
+
+object res_iron  resource m_iron  resource_atlas 2
+object res_stone resource m_stone resource_atlas 2
