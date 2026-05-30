@@ -31,8 +31,7 @@ u32 texture_load(arena_t *scratch, const char *path, b32 flip) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // KayKit palette atlases pack tiny colour swatches in a sea of grey; bilinear + mipmaps bleed
-    // that grey into them (muddy/near-black meshes), so sample nearest with no mipmaps.
+    // KayKit palette atlases bleed grey into the tiny colour swatches under bilinear/mipmaps, so use nearest
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

@@ -9,7 +9,7 @@ typedef struct {
     i32 x, z;
 } cell_t;
 
-// L-shaped run from (sx,sz) to (ex,ez): horizontal leg first, then vertical. Corner not doubled.
+// L-shaped run from (sx,sz) to (ex,ez): horizontal leg then vertical, corner not doubled
 static i32 build_run(i32 sx, i32 sz, i32 ex, i32 ez, cell_t *out, i32 cap) {
     i32 n = 0;
     i32 stepx = (ex > sx) - (ex < sx);
@@ -38,7 +38,7 @@ static b8 in_run(const cell_t *run, i32 n, i32 x, i32 z) {
     return false;
 }
 
-// A neighbour counts as connected if it already holds a path or is part of the pending run.
+// neighbour is connected if it holds a path or is in the pending run
 static b8 preview_present(const world_t *w, const cell_t *run, i32 n, i32 x, i32 z) {
     return world_has_path(w, x, z) || in_run(run, n, x, z);
 }
@@ -88,7 +88,7 @@ void build_tool_update(build_tool_t *t, world_t *w, b32 hover, i32 hx, i32 hz) {
 
 void build_tool_draw(const build_tool_t *t, const world_t *w, assets_t *assets, renderer_t *r) {
     if (w->road_tex == ASSET_INVALID)
-        return; // no road atlas in this level -> nothing to preview
+        return; // no road atlas in this level, nothing to preview
 
     cell_t run[BUILD_RUN_MAX];
     i32 n;

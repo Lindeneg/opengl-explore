@@ -89,7 +89,7 @@ mat4_t mat4_look_at(vec3_t eye, vec3_t center, vec3_t up) {
     return m;
 }
 
-// Cofactor inverse over the flat column-major array (the classic MESA formulation).
+// cofactor inverse over the flat column-major array (classic MESA formulation)
 mat4_t mat4_inverse(mat4_t m) {
     const f32 *e = m.e;
     f32 inv[16];

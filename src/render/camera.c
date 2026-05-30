@@ -31,7 +31,7 @@ mat4_t camera_proj(const camera_t *c, f32 aspect) {
     return mat4_perspective(deg2rad(50.0f), aspect, 0.1f, 1000.0f);
 }
 
-// inv = inverse(view_proj); unproject the NDC point at the given depth into world space.
+// unproject NDC point at depth nz into world space (inv is inverse view_proj)
 static vec3_t unproject(const mat4_t *inv, f32 nx, f32 ny, f32 nz) {
     const f32 *e = inv->e;
     f32 x = e[0] * nx + e[4] * ny + e[8] * nz + e[12];

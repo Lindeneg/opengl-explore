@@ -11,6 +11,7 @@ typedef struct {
     u64 cap;
     u64 committed;
     u64 used;
+    u64 peak; // high-water mark, survives reset
 } arena_t;
 
 typedef struct {
@@ -28,7 +29,20 @@ void *arena_push_zero(arena_t *a, u64 size, u64 align); // zero-filled
 void arena_reset(arena_t *a); // rewind used to 0, keep pages committed
 
 temp_t temp_begin(arena_t *a);
-void temp_end(temp_t t); // rewind to the temp_begin mark
+void temp_end(temp_t t); // rewind to temp_begin mark
+
+typedef struct {
+    u64 used, peak, committed, cap;
+} arena_stats_t;
+
+typedef struct {
+    u64 reserved, carved;
+} arena_sys_stats_t;
+
+arena_stats_t arena_stats(const arena_t *a);
+arena_sys_stats_t arena_sys_stats(void);
+void arena_log_stats(const arena_t *a, const char *name); // logs used/peak/committed/cap
+void arena_log_sys_stats(void);
 
 #define push_struct(a, T) (T *)arena_push_aligned((a), sizeof(T), _Alignof(T))
 #define push_array(a, T, n) (T *)arena_push_aligned((a), sizeof(T) * (u64)(n), _Alignof(T))

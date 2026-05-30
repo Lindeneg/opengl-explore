@@ -15,7 +15,7 @@
 
 int main(void) {
     log_init(NULL);
-    log_set_level(LOG_DEBUG);
+    log_set_level(LL_DEBUG);
     LOG_INFO("app starting");
 
     arena_sys_init(MiB(512));
@@ -38,11 +38,7 @@ int main(void) {
 
     const char *level_path = FPATH(&frame, "assets", "levels", "starter.level");
     level_t *level = level_load(&frame, defs, level_path);
-    if (!level) {
-        LOG_INFO("no level at %s; generating one", level_path);
-        level = level_generate(&frame, defs, 1337);
-        level_save(level, level_path);
-    }
+    ASSERT_MSG(level, "could not load level: %s", level_path);
     world_t world = world_from_level(level, defs, &assets, &permanent, &frame);
 
     camera_t cam = camera_make(vec3(0.0f, 0.0f, 0.0f), 40.0f, deg2rad(60.0f));
@@ -109,6 +105,12 @@ int main(void) {
 
     renderer_shutdown(&r);
     window_destroy(&win);
+
+    LOG_INFO("shutting down");
+    arena_log_stats(&permanent, "permanent");
+    arena_log_stats(&frame, "frame");
+    arena_log_sys_stats();
+
     log_shutdown();
     return 0;
 }

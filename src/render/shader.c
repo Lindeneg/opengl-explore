@@ -53,7 +53,7 @@ u32 shader_from_src(arena_t *scratch, const char *vs_src, const char *fs_src) {
             glDeleteProgram(program);
             program = 0;
         } else {
-            // Linked: the stage objects are no longer needed by the program.
+            // linked, stage objects no longer needed
             glDetachShader(program, vs);
             glDetachShader(program, fs);
         }

@@ -31,8 +31,8 @@ void renderer_begin(renderer_t *r, i32 fb_w, i32 fb_h, const mat4_t *view_proj) 
     glClearColor(0.10f, 0.12f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    r->bound_texture = 0;  // force a texture bind on the first textured draw
-    r->active_program = 0; // force a glUseProgram on the first draw of either kind
+    r->bound_texture = 0;  // force texture bind on first textured draw
+    r->active_program = 0; // force glUseProgram on first draw of either kind
 }
 
 static void use_program(renderer_t *r, u32 program) {

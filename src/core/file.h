@@ -5,7 +5,7 @@
 #include "mem.h"
 
 typedef struct {
-    u8 *data; // arena-allocated, null-terminated at data[size]; NULL on failure
+    u8 *data;
     u64 size;
 } file_data_t;
 

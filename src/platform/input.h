@@ -24,7 +24,7 @@ typedef enum {
 } mouse_button_t;
 
 void input_init(window_t *w);
-void input_update(void); // snapshot per-frame button edges; call once after window_poll
+void input_update(void); // snapshot per-frame button edges, call once after window_poll
 
 b32 input_key_down(key_t k);
 void input_mouse(f32 *x, f32 *y); // normalized 0..1, top-left origin

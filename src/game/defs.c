@@ -2,7 +2,6 @@
 
 #include <string.h>
 
-#include "../core/file.h"
 #include "../core/log.h"
 #include "../core/text.h"
 
@@ -47,7 +46,7 @@ static b32 rarity_parse(const char *s, rarity_t *out) {
     return false;
 }
 
-static void parse_resource(defs_t *d, char **cur) {
+void defs_parse_resource(defs_t *d, char **cur) {
     char *id = text_next_token(cur), *type = text_next_token(cur), *rar = text_next_token(cur);
     char *w = text_next_token(cur), *vmin = text_next_token(cur), *vmax = text_next_token(cur);
     char *vol = text_next_token(cur), *cap = text_next_token(cur), *rep = text_next_token(cur);
@@ -71,42 +70,6 @@ static void parse_resource(defs_t *d, char **cur) {
     r->volatility = (f32)atof(vol);
     r->site_capacity = cap ? (f32)atof(cap) : 0.0f;
     r->site_replenish = rep ? (f32)atof(rep) : 0.0f;
-}
-
-static void parse_line(defs_t *d, char *line) {
-    char *hash = strchr(line, '#');
-    if (hash)
-        *hash = '\0';
-
-    char *cur = line;
-    char *tok = text_next_token(&cur);
-    if (!tok)
-        return;
-
-    if (strcmp(tok, "resource") == 0)
-        parse_resource(d, &cur);
-    else
-        LOG_WARN("defs: unknown directive '%s'", tok);
-}
-
-void defs_load_file(defs_t *defs, arena_t *scratch, const char *path) {
-    file_data_t fd = file_read(scratch, path);
-    if (!fd.data) {
-        LOG_WARN("defs: cannot read %s", path);
-        return;
-    }
-    char *cur = (char *)fd.data;
-    while (*cur) {
-        char *eol = cur;
-        while (*eol && *eol != '\n')
-            ++eol;
-        char saved = *eol;
-        *eol = '\0';
-        parse_line(defs, cur);
-        if (saved == '\0')
-            break;
-        cur = eol + 1;
-    }
 }
 
 const resource_def_t *defs_find_resource(const defs_t *defs, const char *id) {

@@ -1,5 +1,6 @@
 #include "mesh.h"
 
+#include "../core/log.h"
 #include "gl.h"
 
 #define CGLTF_IMPLEMENTATION
@@ -8,10 +9,15 @@
 mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
     cgltf_options options = {0};
     cgltf_data *data = NULL;
-    ASSERT_MSG(cgltf_parse_file(&options, path, &data) == cgltf_result_success,
-               "gltf parse failed: %s", path);
-    ASSERT_MSG(cgltf_load_buffers(&options, data, path) == cgltf_result_success,
-               "gltf buffers failed: %s", path);
+    if (cgltf_parse_file(&options, path, &data) != cgltf_result_success) {
+        LOG_WARN("mesh: gltf parse failed: %s", path);
+        return (mesh_t){0};
+    }
+    if (cgltf_load_buffers(&options, data, path) != cgltf_result_success) {
+        LOG_WARN("mesh: gltf buffers failed: %s", path);
+        cgltf_free(data);
+        return (mesh_t){0};
+    }
 
     u64 vert_count = 0;
     u64 index_count = 0;
@@ -29,7 +35,11 @@ mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
             index_count += prim->indices ? prim->indices->count : pos->count;
         }
     }
-    ASSERT_MSG(vert_count > 0, "gltf has no vertices: %s", path);
+    if (vert_count == 0) {
+        LOG_WARN("mesh: gltf has no vertices: %s", path);
+        cgltf_free(data);
+        return (mesh_t){0};
+    }
 
     temp_t t = temp_begin(scratch);
     f32 *verts = push_array(scratch, f32, vert_count * 5);
@@ -106,7 +116,7 @@ mesh_t mesh_load_gltf(arena_t *scratch, const char *path) {
 
 mesh_t mesh_make_quad(f32 size) {
     f32 h = size * 0.5f;
-    // pos.xyz, uv.xy — flat on the XZ plane, facing +Y (uv unused by the colour shader)
+    // pos.xyz uv.xy, flat on XZ plane facing +Y (uv unused by colour shader)
     f32 verts[] = {
         -h, 0.0f, -h, 0.0f, 0.0f, h,  0.0f, -h, 1.0f, 0.0f,
         h,  0.0f, h,  1.0f, 1.0f, -h, 0.0f, h,  0.0f, 1.0f,

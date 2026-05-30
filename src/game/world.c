@@ -4,7 +4,7 @@
 
 #include "../core/log.h"
 
-// Engine handles for a level's declared assets, indexed parallel to level_t.assets.
+// engine handles for a level's declared assets, parallel to level_t.assets
 typedef struct {
     mesh_handle mesh[LEVEL_MAX_ASSETS];
     texture_handle tex[LEVEL_MAX_ASSETS];
@@ -59,7 +59,7 @@ world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *asset
     w.road_tex = object_tex(lvl, &ra, "road_straight");
 
     u64 cells = (u64)w.w * (u64)w.h;
-    w.terrain = push_array_z(permanent, u8, cells); // 0 = TERRAIN_GROUND
+    w.terrain = push_array_z(permanent, u8, cells); // 0 means TERRAIN_GROUND
     w.paths = push_array_z(permanent, u8, cells);
     w.tiles = push_array(permanent, tile_t, cells);
     for (u64 i = 0; i < cells; ++i)
@@ -91,7 +91,7 @@ world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *asset
         w.cities[i] = (city_t){
             .cx = lvl->cities[i].cx, .cz = lvl->cities[i].cz, .radius = lvl->cities[i].radius};
 
-    // Resource sites: a runtime entity plus a visual placed into the object layer (reuses world_draw).
+    // resource sites, runtime entity plus a visual in the object layer (reuses world_draw)
     w.defs = defs;
     u32 nsites = lvl->site_count ? lvl->site_count : 1;
     w.sites = push_array(permanent, site_t, nsites);
@@ -255,7 +255,7 @@ void world_path_clear(world_t *w, i32 x, i32 z) {
     recompute_around(w, x, z);
 }
 
-// +90deg about +Y maps connection directions E->N, N->W, W->S, S->E.
+// +90deg about +Y maps E->N, N->W, W->S, S->E
 static u8 conn_rotate(u8 c) {
     u8 r = 0;
     if (c & PATH_E)
@@ -282,7 +282,7 @@ static u8 conn_rot_to(u8 base, u8 target) {
 static i32 conn_count(u8 c) { return (c & 1) + ((c >> 1) & 1) + ((c >> 2) & 1) + ((c >> 3) & 1); }
 
 void world_path_mesh(const world_t *w, u8 conn, mesh_handle *mesh, u8 *rot) {
-    // Base orientations of the source meshes; flip these if a tile renders rotated wrong.
+    // base orientations of the source meshes, flip these if a tile renders rotated wrong
     const u8 BASE_STRAIGHT = PATH_E | PATH_W;
     const u8 BASE_CORNER = PATH_N | PATH_E;
     const u8 BASE_TSPLIT = PATH_N | PATH_E | PATH_S;

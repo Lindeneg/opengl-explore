@@ -20,7 +20,7 @@ typedef enum {
     ASSET_TEXTURE,
 } asset_kind_t;
 
-// A declared dependency: a name the level refers to + the path to load it from.
+// declared dependency: name the level refers to + the path to load it from
 typedef struct {
     char name[LEVEL_ID_LEN];
     char path[LEVEL_PATH_LEN];
@@ -29,29 +29,29 @@ typedef struct {
 } asset_decl_t;
 
 typedef enum {
-    OBJ_GROUND,   // terrain base mesh (used by `fill`)
-    OBJ_BUILDING, // full tile incl. its own base -> replaces the ground under it
+    OBJ_GROUND,   // terrain base mesh (used by fill)
+    OBJ_BUILDING, // full tile with its own base, replaces the ground under it
     OBJ_ROAD,     // full tile, drawn via the path layer
-    OBJ_INDUSTRY, // like a building, but flagged as an industry site
-    OBJ_NATURE,   // tree/bush -> sits on top of the ground
-    OBJ_RESOURCE, // resource site prop -> sits on top of the ground
+    OBJ_INDUSTRY, // like a building, flagged as an industry site
+    OBJ_NATURE,   // tree/bush, sits on the ground
+    OBJ_RESOURCE, // resource site prop, sits on the ground
 } object_kind_t;
 
-// True for kinds whose mesh includes its own base (so the ground tile is not drawn under them).
+// true for kinds whose mesh includes its own base (ground tile not drawn under them)
 static inline b8 object_kind_replaces_ground(object_kind_t k) {
     return k == OBJ_BUILDING || k == OBJ_INDUSTRY;
 }
 
-// A prototype: what a tile can be. References assets by name, not path.
+// prototype, what a tile can be (references assets by name not path)
 typedef struct {
     char id[LEVEL_ID_LEN];
     object_kind_t kind;
     char mesh[LEVEL_ID_LEN]; // asset_decl name
     char tex[LEVEL_ID_LEN];  // asset_decl name
-    f32 scale;               // uniform scale applied when drawn (1 = native)
+    f32 scale;               // uniform scale when drawn (1 = native)
 } object_def_t;
 
-// A non-fill cell: which prototype sits at (x,z) and its quarter-turn rotation.
+// non-fill cell, which prototype sits at (x,z) + its quarter-turn rotation
 typedef struct {
     i32 x, z;
     char object[LEVEL_ID_LEN];
@@ -67,8 +67,8 @@ typedef struct {
     u32 radius;
 } level_city_t;
 
-// A placed RAW resource site: position, the resource def it yields, and the prototype that draws it.
-// capacity/replenish of 0 mean "use the resource def's default".
+// placed RAW resource site, references a resource def + the prototype that draws it
+// capacity/replenish of 0 mean use the resource def default
 typedef struct {
     i32 x, z;
     char resource[LEVEL_ID_LEN]; // resource def id
@@ -76,8 +76,7 @@ typedef struct {
     f32 capacity, replenish;
 } level_site_t;
 
-// The serializable source form of a world: the generator and the file loader both produce this,
-// and world_from_level (world.h) compiles it into a runtime world_t.
+// parsed source form of a world, world_from_level (world.h) compiles it into a runtime world_t
 typedef struct {
     char name[LEVEL_ID_LEN];
     i32 w, h;
@@ -107,9 +106,7 @@ typedef struct {
     u32 site_count;
 } level_t;
 
-// All allocate the returned level_t in `scratch`; load returns NULL if the file is missing.
-// `defs` is filled from the level's `use` directives (load) or directly (generate).
-level_t *level_generate(arena_t *scratch, defs_t *defs, u32 seed);
+// parses a level file into scratch (NULL if missing), defs filled from its use directives
 level_t *level_load(arena_t *scratch, defs_t *defs, const char *path);
 b32 level_save(const level_t *level, const char *path);
 

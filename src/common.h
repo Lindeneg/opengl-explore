@@ -36,7 +36,7 @@ typedef int32_t b32;
 #define false 0
 #endif
 
-typedef void (*void_fn)(void); // generic function pointer (e.g. a GL proc address)
+typedef void (*void_fn)(void); // generic function pointer (e.g. GL proc address)
 
 #define KiB(n) ((u64)(n) << 10)
 #define MiB(n) ((u64)(n) << 20)
@@ -47,29 +47,25 @@ typedef void (*void_fn)(void); // generic function pointer (e.g. a GL proc addre
 
 #define ALIGN_UP_2(n, p) (((u64)(n) + ((u64)(p) - 1)) & (~((u64)(p) - 1)))
 
+void log_assert(b32 fatal, const char *file, i32 line, const char *fmt, ...);
+
 #define ASSERT(expr)                                                                               \
     do {                                                                                           \
-        if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT ERROR] [%s:%d:%s] Expression '%s' was false\n", __FILE__,     \
-                    __LINE__, __func__, #expr);                                                    \
-            abort();                                                                               \
-        }                                                                                          \
+        if (!(expr))                                                                               \
+            log_assert(true, __FILE__, __LINE__, "ASSERT '%s' failed (%s)", #expr, __func__);      \
     } while (0)
 
 #define ASSERT_MSG(expr, fmt, ...)                                                                 \
     do {                                                                                           \
-        if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT ERROR] [%s:%d:%s] " fmt "\n", __FILE__, __LINE__, __func__,   \
-                    ##__VA_ARGS__);                                                                \
-            abort();                                                                               \
-        }                                                                                          \
+        if (!(expr))                                                                               \
+            log_assert(true, __FILE__, __LINE__, "ASSERT '%s' failed: " fmt " (%s)", #expr,        \
+                       ##__VA_ARGS__, __func__);                                                   \
     } while (0)
 
 #define ASSERT_RET(expr, ret)                                                                      \
     do {                                                                                           \
         if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT WARNING] [%s:%d:%s] Expression '%s' was false\n", __FILE__,   \
-                    __LINE__, __func__, #expr);                                                    \
+            log_assert(false, __FILE__, __LINE__, "check '%s' failed (%s)", #expr, __func__);      \
             return (ret);                                                                          \
         }                                                                                          \
     } while (0)
@@ -77,8 +73,7 @@ typedef void (*void_fn)(void); // generic function pointer (e.g. a GL proc addre
 #define ASSERT_RET_V(expr)                                                                         \
     do {                                                                                           \
         if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT WARNING] [%s:%d:%s] Expression '%s' was false\n", __FILE__,   \
-                    __LINE__, __func__, #expr);                                                    \
+            log_assert(false, __FILE__, __LINE__, "check '%s' failed (%s)", #expr, __func__);      \
             return;                                                                                \
         }                                                                                          \
     } while (0)
@@ -86,8 +81,8 @@ typedef void (*void_fn)(void); // generic function pointer (e.g. a GL proc addre
 #define ASSERT_RET_MSG(expr, ret, fmt, ...)                                                        \
     do {                                                                                           \
         if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT WARNING] [%s:%d:%s] " fmt "\n", __FILE__, __LINE__, __func__, \
-                    ##__VA_ARGS__);                                                                \
+            log_assert(false, __FILE__, __LINE__, "check '%s' failed: " fmt " (%s)", #expr,        \
+                       ##__VA_ARGS__, __func__);                                                   \
             return (ret);                                                                          \
         }                                                                                          \
     } while (0)
@@ -95,8 +90,8 @@ typedef void (*void_fn)(void); // generic function pointer (e.g. a GL proc addre
 #define ASSERT_RET_V_MSG(expr, fmt, ...)                                                           \
     do {                                                                                           \
         if (!(expr)) {                                                                             \
-            fprintf(stderr, "[ASSERT WARNING] [%s:%d:%s] " fmt "\n", __FILE__, __LINE__, __func__, \
-                    ##__VA_ARGS__);                                                                \
+            log_assert(false, __FILE__, __LINE__, "check '%s' failed: " fmt " (%s)", #expr,        \
+                       ##__VA_ARGS__, __func__);                                                   \
             return;                                                                                \
         }                                                                                          \
     } while (0)

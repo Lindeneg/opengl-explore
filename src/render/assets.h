@@ -12,7 +12,7 @@ typedef u32 texture_handle;
 #define ASSETS_MAX_MESHES 256
 #define ASSETS_MAX_TEXTURES 32
 
-// Loads meshes/textures once, keyed by path; loading the same path twice returns the same handle.
+// loads meshes/textures once, keyed by path (same path returns same handle)
 typedef struct {
     mesh_t meshes[ASSETS_MAX_MESHES];
     const char *mesh_paths[ASSETS_MAX_MESHES];
@@ -22,7 +22,7 @@ typedef struct {
     const char *texture_paths[ASSETS_MAX_TEXTURES];
     u32 texture_count;
 
-    arena_t *permanent; // owns the cached path strings
+    arena_t *permanent; // owns cached path strings
 } assets_t;
 
 void assets_init(assets_t *a, arena_t *permanent);
