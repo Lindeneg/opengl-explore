@@ -34,6 +34,7 @@ add_executable(App
         src/game/build.c
         src/game/level.c
         src/game/defs.c
+        src/game/sim.c
 )
 
 target_include_directories(App SYSTEM PRIVATE third_party)

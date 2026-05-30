@@ -167,6 +167,33 @@ world_t world_from_level(const level_t *lvl, const defs_t *defs, assets_t *asset
         str_copy(c->name, sizeof c->name, lc->name);
     }
 
+    // per-game economic state: prices seeded mid-band, city supply/demand seeded with the
+    // always-present (size-scaled) passengers + mail; everything else is filled by industries (2b)
+    u32 nres = defs->resource_count;
+    w.prices = push_array(permanent, f32, nres);
+    for (u32 r = 0; r < nres; ++r)
+        w.prices[r] = (defs->resources[r].value_min + defs->resources[r].value_max) * 0.5f;
+    w.city_supply = push_array_z(permanent, f32, (u64)ncities * nres);
+    w.city_demand = push_array_z(permanent, f32, (u64)ncities * nres);
+    {
+        const resource_def_t *rp = defs_find_resource(defs, "passengers");
+        const resource_def_t *rm = defs_find_resource(defs, "mail");
+        i32 pax = rp ? (i32)(rp - defs->resources) : -1;
+        i32 mail = rm ? (i32)(rm - defs->resources) : -1;
+        for (u32 i = 0; i < w.city_count; ++i) {
+            const city_t *c = &w.cities[i];
+            f32 pop = c->tier < defs->tier_count ? (f32)defs->tiers[c->tier].max_buildings : 1.0f;
+            if (pax >= 0) {
+                w.city_supply[i * nres + (u32)pax] = pop;
+                w.city_demand[i * nres + (u32)pax] = pop;
+            }
+            if (mail >= 0) {
+                w.city_supply[i * nres + (u32)mail] = pop * 0.6f;
+                w.city_demand[i * nres + (u32)mail] = pop * 0.6f;
+            }
+        }
+    }
+
     // resource sites, runtime entity plus a visual in the object layer (reuses world_draw)
     w.defs = defs;
     u32 nsites = lvl->site_count ? lvl->site_count : 1;

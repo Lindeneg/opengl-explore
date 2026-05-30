@@ -60,6 +60,11 @@ typedef struct {
     u32 site_count;
     const defs_t *defs; // resource rulebook this world was built from
 
+    // per-game economic state (the realized "save" side; mutated by the sim each tick)
+    f32 *prices;      // resource_count, current market price per resource
+    f32 *city_supply; // city_count * resource_count, units offered per tick (row-major by city)
+    f32 *city_demand; // city_count * resource_count, units wanted per tick
+
     mesh_handle ground;      // terrain ground mesh, from the fill prototype
     texture_handle ground_tex;
     mesh_handle road_straight, road_corner, road_tsplit, road_junction;

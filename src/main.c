@@ -4,6 +4,7 @@
 #include "game/build.h"
 #include "game/defs.h"
 #include "game/level.h"
+#include "game/sim.h"
 #include "game/world.h"
 #include "math/math.h"
 #include "platform/input.h"
@@ -44,6 +45,9 @@ int main(void) {
     camera_t cam = camera_make(vec3(0.0f, 0.0f, 0.0f), 40.0f, deg2rad(60.0f));
     build_tool_t tool = {0};
 
+    sim_t sim;
+    sim_init(&sim);
+
     f64 last = window_time();
     while (!window_should_close(&win)) {
         window_poll();
@@ -56,6 +60,8 @@ int main(void) {
 
         if (input_key_down(KEY_ESCAPE))
             break;
+
+        sim_update(&sim, &world, dt);
 
         f32 px = 0.0f, pz = 0.0f;
         if (input_key_down(KEY_W) || input_key_down(KEY_UP))
